@@ -19,7 +19,7 @@ a {
 /* Navbar */
 
 .navbar {
-    padding-top: 15px;
+    padding-top: 10px;
     padding-bottom: 15px;
 }
 
@@ -35,6 +35,8 @@ a {
     margin-left: 10px;
     font-weight: 500;
 }
+
+
 
 /* Hero Section */
 .hero-section{
@@ -76,7 +78,9 @@ a {
 .hero-description{
     width:650px;
     font-size:22px;
+    padding-top:35px;
 }
+
 /* Dashboard cards */
 
 .dashboard-card {
