@@ -17,43 +17,41 @@ adminLoginForm.addEventListener(
         event.preventDefault();
 
         const loginData = {
-            email:
-                adminEmailInput.value.trim(),
-
-            password:
-                adminPasswordInput.value
+            email: adminEmailInput.value.trim(),
+            password: adminPasswordInput.value
         };
 
         try {
 
             const response = await fetch(
-                "/api/auth/login",
+                "/api/admins/login",
                 {
                     method: "POST",
 
                     headers: {
-                        "Content-Type":
-                            "application/json"
+                        "Content-Type": "application/json"
                     },
-
-                    credentials: "same-origin",
 
                     body: JSON.stringify(loginData)
                 }
             );
 
-            const result =
-                await response.json();
-
             if (!response.ok) {
+
+                const errorMessage =
+                    await response.text();
+
                 showLoginMessage(
-                    result.message ||
-                    "Login failed.",
+                    errorMessage ||
+                    "Invalid Email or Password",
                     "danger"
                 );
 
                 return;
             }
+
+            const admin =
+                await response.json();
 
             sessionStorage.setItem(
                 "adminLoggedIn",
@@ -62,15 +60,27 @@ adminLoginForm.addEventListener(
 
             sessionStorage.setItem(
                 "adminEmail",
-                result.email
+                admin.email
             );
 
-            window.location.href =
-                "index.html";
+            showLoginMessage(
+                "Login successful.",
+                "success"
+            );
+
+            setTimeout(function () {
+
+                window.location.href =
+                    "index.html";
+
+            }, 800);
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Login error:",
+                error
+            );
 
             showLoginMessage(
                 "Cannot connect to the server.",
@@ -87,5 +97,7 @@ function showLoginMessage(message, type) {
     loginMessage.className =
         `alert alert-${type}`;
 
-    loginMessage.classList.remove("d-none");
+    loginMessage.classList.remove(
+        "d-none"
+    );
 }
