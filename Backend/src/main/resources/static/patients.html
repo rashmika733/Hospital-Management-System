@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Patient Management</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    >
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <script src="auth.js"></script>
+</head>
+
+<body>
+
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+    <div class="container">
+
+        <a class="navbar-brand fw-bold" href="index.html">
+            <i class="bi bi-hospital"></i>
+            Hospital Management System
+        </a>
+
+        <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#mainNavbar"
+            aria-controls="mainNavbar"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+        >
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div
+            class="collapse navbar-collapse"
+            id="mainNavbar"
+        >
+            <ul class="navbar-nav ms-auto">
+
+                <li class="nav-item ms-lg-2" >
+                    <a
+                        class="btn btn-outline-light "
+                        href="index.html"
+                    >
+                        Home
+                    </a>
+                </li>
+
+        
+
+                <li class="nav-item ms-lg-2" >
+                    <a
+                        class="btn btn-outline-light "
+                        href="patients.html"
+                    >
+                        Patients
+                    </a>
+                </li>
+
+                <li class="nav-item ms-lg-2" >
+                    <a
+                        class="btn btn-outline-light "
+                        href="doctors.html"
+                    >
+                        Doctors
+                    </a>
+                </li>
+
+                <li class="nav-item ms-lg-2">
+                    <a
+                        class="btn btn-outline-light "
+                        href="appointments.html"
+                    >
+                        Appointments
+                    </a>
+                </li>
+
+                <li class="nav-item ms-lg-2">
+                    <a
+                        class="btn btn-outline-light "
+                        href="billing.html"
+                    >
+                        Billing
+                    </a>
+                
+                </li>
+               
+   <li class="nav-item ms-lg-2">
+    <button
+        type="button"
+        class="btn btn-outline-light "
+        id="logoutButton">
+        Logout
+    </button>
+</li>
+
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+
+        <h1>
+            <i class="bi bi-people-fill"></i>
+            Patient Management
+        </h1>
+
+    </div>
+</section>
+
+<!-- Main Content -->
+<main class="container py-5">
+
+    <!-- Alert Message -->
+    <div
+        id="messageBox"
+        class="alert d-none"
+        role="alert"
+    ></div>
+
+    <div class="row g-4">
+
+        <!-- Patient Registration Form -->
+        <div class="col-lg-4">
+
+            <div class="form-card">
+
+                <div class="card-title-area">
+
+                    <div>
+                        <h3 id="formTitle">
+                            Register Patient
+                        </h3>
+
+                        <p>
+                            Enter patient information below.
+                        </p>
+                    </div>
+                </div>
+
+                <form id="patientForm">
+
+                    <!-- Hidden Patient ID -->
+                    <input
+                        type="hidden"
+                        id="patientId"
+                    >
+
+                    <!-- Patient Name -->
+                    <div class="mb-3">
+
+                        <label
+                            for="patientName"
+                            class="form-label"
+                        >
+                            Full Name
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="patientName"
+                            placeholder="Enter patient full name"
+                            required
+                        >
+
+                        <div class="invalid-feedback">
+                            Please enter the patient name.
+                        </div>
+
+                    </div>
+
+                    <!-- Age -->
+                    <div class="mb-3">
+
+                        <label
+                            for="patientAge"
+                            class="form-label"
+                        >
+                            Age
+                        </label>
+
+                        <input
+                            type="number"
+                            class="form-control"
+                            id="patientAge"
+                            placeholder="Enter patient age"
+                            min="0"
+                            max="120"
+                            required
+                        >
+
+                        <div class="invalid-feedback">
+                            Please enter a valid age.
+                        </div>
+
+                    </div>
+
+                    <!-- Gender -->
+                    <div class="mb-3">
+
+                        <label
+                            for="patientGender"
+                            class="form-label"
+                        >
+                            Gender
+                        </label>
+
+                        <select
+                            class="form-select"
+                            id="patientGender"
+                            required
+                        >
+
+                            <option value="Male">
+                                Male
+                            </option>
+
+                            <option value="Female">
+                                Female
+                            </option>
+
+                            <option value="Other">
+                                Other
+                            </option>
+                        </select>
+
+                        <div class="invalid-feedback">
+                            Please select a gender.
+                        </div>
+
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="mb-3">
+
+                        <label
+                            for="patientPhone"
+                            class="form-label"
+                        >
+                            Phone Number
+                        </label>
+
+                        <input
+                            type="tel"
+                            class="form-control"
+                            id="patientPhone"
+                            placeholder="Example: 0771234567"
+                            maxlength="10"
+                            required
+                        >
+
+                        <div class="invalid-feedback">
+                            Enter a valid 10-digit phone number.
+                        </div>
+
+                    </div>
+
+                    <!-- Address -->
+                    <div class="mb-4">
+
+                        <label
+                            for="patientAddress"
+                            class="form-label"
+                        >
+                            Address
+                        </label>
+
+                        <textarea
+                            class="form-control"
+                            id="patientAddress"
+                            rows="3"
+                            placeholder="Enter patient address"
+                            required
+                        ></textarea>
+
+                        <div class="invalid-feedback">
+                            Please enter the patient address.
+                        </div>
+
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="d-grid gap-2">
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                            id="saveButton"
+                        >
+                            Save Patient
+                        </button>
+
+                        <button
+                            type="button"
+                            class="btn btn-secondary d-none"
+                            id="cancelButton"
+                        >
+                            Cancel Edit
+                        </button>
+
+                        <button
+                            type="reset"
+                            class="btn btn-outline-secondary"
+                            id="clearButton"
+                        >
+                            Clear Form
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+        <!-- Patient List -->
+        <div class="col-lg-8">
+
+            <div class="table-card">
+
+                <div
+                    class="d-flex flex-column flex-md-row
+                           justify-content-between
+                           align-items-md-center
+                           gap-3 mb-4"
+                >
+
+                    <div>
+                        <h3 class="mb-1">
+                            Patient List
+                        </h3>
+
+                        <p class="text-muted mb-0">
+                            Total patients:
+                            <strong id="totalPatients">0</strong>
+                        </p>
+                    </div>
+
+                    <div class="patient-search">
+
+                        <div class="input-group">
+
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="searchPatient"
+                                placeholder="Search patient..."
+                            >
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="table-responsive">
+
+                    <table
+                        class="table table-hover align-middle"
+                    >
+
+                        <thead class="table-primary">
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Name</th>
+                                <th>Age</th>
+                                <th>Gender</th>
+                                <th>Phone</th>
+                                <th>Address</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="patientTableBody">
+
+                            <tr id="emptyPatientRow">
+                                <td
+                                    colspan="7"
+                                    class="text-center py-5 text-muted"
+                                >
+                                    <i
+                                        class="bi bi-person-x
+                                               empty-table-icon"
+                                    ></i>
+
+                                    <p class="mt-2 mb-0">
+                                        No patients have been registered.
+                                    </p>
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</main>
+
+
+
+<!-- Bootstrap JavaScript -->
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+</script>
+
+<!-- Patient JavaScript -->
+<script src="patient.js"></script>
+<script src="main.js"></script>
+<script src="auth.js"></script>
+
+</body>
+</html>

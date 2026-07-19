@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Hospital Management System</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    >
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    <script src="auth.js"></script>
+</head>
+
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+    <div class="container">
+
+        <a class="navbar-brand fw-bold" href="index.html">
+            <i class="bi bi-hospital"></i>
+            Hospital Management System
+        </a>
+
+        <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#mainNavbar"
+            aria-controls="mainNavbar"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+        >
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div
+            class="collapse navbar-collapse"
+            id="mainNavbar"
+        >
+            <ul class="navbar-nav ms-auto">
+
+                <li class="nav-item ms-lg-2" >
+                    <a
+                        class="btn btn-outline-light "
+                        href="index.html"
+                    >
+                        Home
+                    </a>
+                </li>
+
+        
+
+                <li class="nav-item ms-lg-2" >
+                    <a
+                        class="btn btn-outline-light "
+                        href="patients.html"
+                    >
+                        Patients
+                    </a>
+                </li>
+
+                <li class="nav-item ms-lg-2" >
+                    <a
+                        class="btn btn-outline-light "
+                        href="doctors.html"
+                    >
+                        Doctors
+                    </a>
+                </li>
+
+                <li class="nav-item ms-lg-2">
+                    <a
+                        class="btn btn-outline-light "
+                        href="appointments.html"
+                    >
+                        Appointments
+                    </a>
+                </li>
+
+                <li class="nav-item ms-lg-2">
+                    <a
+                        class="btn btn-outline-light "
+                        href="billing.html"
+                    >
+                        Billing
+                    </a>
+                
+                </li>
+               
+   <li class="nav-item ms-lg-2">
+    <button
+        type="button"
+        class="btn btn-outline-light "
+        id="logoutButton">
+        Logout
+    </button>
+</li>
+
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<header class="hero-section">
+
+
+    <div class="hero-overlay"></div>
+
+    <div class="container hero-content">
+
+        
+        <h1>
+            Manage hospital operations efficiently
+            and securely
+        </h1>
+
+        <p class="hero-description">
+            Manage patients, doctors, appointments and
+            hospital billing using one web-based system.
+        </p>
+
+        
+    </div>
+
+</header>
+
+<!-- Dashboard Section -->
+<main class="container py-5">
+
+    <div class="section-heading">
+        <h2>Hospital Dashboard</h2>
+
+        <p>
+            View and manage the main hospital services.
+        </p>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Patient Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="dashboard-card">
+
+                <div class="dashboard-icon patient-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+
+                <h3 id="patientCount">0</h3>
+                <p>Total Patients</p>
+
+                <a
+                    href="patients.html"
+                    class="btn btn-primary w-100"
+                >
+                    Manage Patients
+                </a>
+
+            </div>
+        </div>
+
+        <!-- Doctor Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="dashboard-card">
+
+                <div class="dashboard-icon doctor-icon">
+                    <i class="bi bi-person-badge-fill"></i>
+                </div>
+
+                <h3 id="doctorCount">0</h3>
+                <p>Total Doctors</p>
+
+                <a
+                    href="doctors.html"
+                    class="btn btn-success w-100"
+                >
+                    Manage Doctors
+                </a>
+
+            </div>
+        </div>
+
+        <!-- Appointment Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="dashboard-card">
+
+                <div class="dashboard-icon appointment-icon">
+                    <i class="bi bi-calendar-check-fill"></i>
+                </div>
+
+                <h3 id="appointmentCount">0</h3>
+                <p>Appointments</p>
+
+                <a
+                    href="appointments.html"
+                    class="btn btn-warning w-100"
+                >
+                    View Appointments
+                </a>
+
+            </div>
+        </div>
+
+        <!-- Billing Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="dashboard-card">
+
+                <div class="dashboard-icon billing-icon">
+                    <i class="bi bi-receipt-cutoff"></i>
+                </div>
+
+                <h3 id="billCount">0</h3>
+                <p>Generated Bills</p>
+
+                <a
+                    href="billing.html"
+                    class="btn btn-danger w-100"
+                >
+                    Manage Billing
+                </a>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Main Services -->
+    <section class="services-section">
+
+        <div class="section-heading">
+            <h2>Main Services</h2>
+
+            <p>
+                Hospital management functions available in
+                the system.
+            </p>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-md-6">
+                <div class="service-card">
+                    <i class="bi bi-person-plus"></i>
+
+                    <div>
+                        <h4>Patient Registration</h4>
+
+                        <p>
+                            Register new patients and manage
+                            existing patient information.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="service-card">
+                    <i class="bi bi-person-vcard"></i>
+
+                    <div>
+                        <h4>Doctor Management</h4>
+
+                        <p>
+                            Add doctors and manage their
+                            specializations and availability.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="service-card">
+                    <i class="bi bi-calendar2-week"></i>
+
+                    <div>
+                        <h4>Appointment Scheduling</h4>
+
+                        <p>
+                            Schedule and maintain patient
+                            appointments with doctors.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="service-card">
+                    <i class="bi bi-cash-stack"></i>
+
+                    <div>
+                        <h4>Billing Management</h4>
+
+                        <p>
+                            Calculate hospital charges and
+                            generate patient bills.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container text-center">
+
+        <p class="mb-1">
+            Hospital Management System
+        </p>
+
+        <small>
+        ©️2026 All right reserved
+            <span id="currentYear"></span>
+        </small>
+
+    </div>
+</footer>
+
+<!-- Bootstrap JavaScript -->
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+</script>
+
+<!-- Custom JavaScript -->
+<script src="main.js"></script>
+<script src="auth.js"></script>
+
+</body>
+</html>
