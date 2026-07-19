@@ -1,3 +1,5 @@
+const API_URL = "/api/patients";
+
 const patientForm = document.getElementById("patientForm");
 const patientTableBody = document.getElementById("patientTableBody");
 
@@ -17,165 +19,196 @@ const cancelButton = document.getElementById("cancelButton");
 const clearButton = document.getElementById("clearButton");
 const messageBox = document.getElementById("messageBox");
 
-let patients = JSON.parse(localStorage.getItem("patients")) || [];
+let patients = [];
 
-document.addEventListener("DOMContentLoaded", function () {
-    displayPatients(patients);
-});
+document.addEventListener("DOMContentLoaded", loadPatients);
 
-patientForm.addEventListener("submit", function (event) {
+patientForm.addEventListener("submit", async function (event) {
     event.preventDefault();
 
     if (!validatePatientForm()) {
         return;
     }
 
-    const patientId = patientIdInput.value;
+    const patientId = patientIdInput.value.trim();
 
     const patient = {
-        id: patientId || generatePatientId(),
-        name: patientNameInput.value.trim(),
+        patientName: patientNameInput.value.trim(),
         age: Number(patientAgeInput.value),
         gender: patientGenderInput.value,
-        phone: patientPhoneInput.value.trim(),
+        phoneNumber: patientPhoneInput.value.trim(),
         address: patientAddressInput.value.trim()
     };
 
-    if (patientId) {
-        updatePatient(patient);
-    } else {
-        addPatient(patient);
-    }
+    try {
+        if (patientId === "") {
+            await addPatient(patient);
+        } else {
+            await updatePatient(patientId, patient);
+        }
 
-    savePatients();
-    displayPatients(patients);
-    resetPatientForm();
+        resetPatientForm();
+        await loadPatients();
+
+    } catch (error) {
+        console.error(error);
+        showMessage("Patient information could not be saved.", "danger");
+    }
 });
 
 searchPatientInput.addEventListener("input", function () {
-    const searchValue = searchPatientInput.value
-        .trim()
-        .toLowerCase();
+    const searchValue = searchPatientInput.value.trim().toLowerCase();
 
     const filteredPatients = patients.filter(function (patient) {
         return (
-            patient.id.toLowerCase().includes(searchValue) ||
-            patient.name.toLowerCase().includes(searchValue) ||
-            patient.phone.includes(searchValue) ||
-            patient.gender.toLowerCase().includes(searchValue)
+            String(patient.id || "").toLowerCase().includes(searchValue) ||
+            String(patient.patientName || "").toLowerCase().includes(searchValue) ||
+            String(patient.phoneNumber || "").includes(searchValue) ||
+            String(patient.gender || "").toLowerCase().includes(searchValue)
         );
     });
 
     displayPatients(filteredPatients);
 });
 
-cancelButton.addEventListener("click", function () {
-    resetPatientForm();
-});
+cancelButton.addEventListener("click", resetPatientForm);
 
 clearButton.addEventListener("click", function () {
     setTimeout(function () {
-        patientForm.classList.remove("was-validated");
         patientIdInput.value = "";
+        patientPhoneInput.setCustomValidity("");
+        patientForm.classList.remove("was-validated");
     }, 0);
 });
 
-function validatePatientForm() {
-    const phonePattern = /^[0-9]{10}$/;
+async function loadPatients() {
+    try {
+        const response = await fetch(API_URL);
 
-    let isValid = true;
+        if (!response.ok) {
+            throw new Error("Failed to load patients");
+        }
 
-    if (patientNameInput.value.trim() === "") {
-        isValid = false;
+        patients = await response.json();
+        displayPatients(patients);
+
+    } catch (error) {
+        console.error(error);
+        showMessage("Patient records could not be loaded.", "danger");
     }
-
-    const age = Number(patientAgeInput.value);
-
-    if (
-        patientAgeInput.value === "" ||
-        age < 0 ||
-        age > 120
-    ) {
-        isValid = false;
-    }
-
-    if (patientGenderInput.value === "") {
-        isValid = false;
-    }
-
-    if (!phonePattern.test(patientPhoneInput.value.trim())) {
-        patientPhoneInput.setCustomValidity(
-            "Enter a valid 10-digit phone number."
-        );
-
-        isValid = false;
-    } else {
-        patientPhoneInput.setCustomValidity("");
-    }
-
-    if (patientAddressInput.value.trim() === "") {
-        isValid = false;
-    }
-
-    patientForm.classList.add("was-validated");
-
-    return isValid && patientForm.checkValidity();
 }
 
-function generatePatientId() {
-    const timestamp = Date.now().toString().slice(-5);
-
-    return "P" + timestamp;
-}
-
-function addPatient(patient) {
-    patients.push(patient);
-
-    showMessage(
-        "Patient registered successfully.",
-        "success"
-    );
-}
-
-function updatePatient(updatedPatient) {
-    const patientIndex = patients.findIndex(function (patient) {
-        return patient.id === updatedPatient.id;
+async function addPatient(patient) {
+    const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(patient)
     });
 
-    if (patientIndex === -1) {
-        showMessage(
-            "Patient could not be found.",
-            "danger"
-        );
+    if (!response.ok) {
+        throw new Error("Failed to add patient");
+    }
 
+    showMessage("Patient registered successfully.", "success");
+}
+
+async function updatePatient(patientId, patient) {
+    const response = await fetch(`${API_URL}/${patientId}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(patient)
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to update patient");
+    }
+
+    showMessage("Patient information updated successfully.", "success");
+}
+
+async function deletePatient(patientId) {
+    const patient = patients.find(function (item) {
+        return item.id === patientId;
+    });
+
+    if (!patient) {
+        showMessage("Patient could not be found.", "danger");
         return;
     }
 
-    patients[patientIndex] = updatedPatient;
-
-    showMessage(
-        "Patient information updated successfully.",
-        "success"
+    const confirmed = confirm(
+        `Are you sure you want to delete ${patient.patientName}?`
     );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/${patientId}`, {
+            method: "DELETE"
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to delete patient");
+        }
+
+        if (patientIdInput.value === patientId) {
+            resetPatientForm();
+        }
+
+        showMessage("Patient deleted successfully.", "success");
+        await loadPatients();
+
+    } catch (error) {
+        console.error(error);
+        showMessage("Patient could not be deleted.", "danger");
+    }
+}
+
+function editPatient(patientId) {
+    const patient = patients.find(function (item) {
+        return item.id === patientId;
+    });
+
+    if (!patient) {
+        showMessage("Patient could not be found.", "danger");
+        return;
+    }
+
+    patientIdInput.value = patient.id;
+    patientNameInput.value = patient.patientName;
+    patientAgeInput.value = patient.age;
+    patientGenderInput.value = patient.gender;
+    patientPhoneInput.value = patient.phoneNumber;
+    patientAddressInput.value = patient.address;
+
+    formTitle.textContent = "Update Patient";
+    saveButton.textContent = "Update Patient";
+    cancelButton.classList.remove("d-none");
+
+    patientForm.classList.remove("was-validated");
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
 }
 
 function displayPatients(patientList) {
     patientTableBody.innerHTML = "";
-
     totalPatientsElement.textContent = patients.length;
 
     if (patientList.length === 0) {
         patientTableBody.innerHTML = `
             <tr>
-                <td
-                    colspan="7"
-                    class="text-center py-5 text-muted"
-                >
+                <td colspan="7" class="text-center py-5 text-muted">
                     <i class="bi bi-person-x empty-table-icon"></i>
-
-                    <p class="mt-2 mb-0">
-                        No patient records found.
-                    </p>
+                    <p class="mt-2 mb-0">No patient records found.</p>
                 </td>
             </tr>
         `;
@@ -193,13 +226,10 @@ function displayPatients(patientList) {
                 </span>
             </td>
 
-            <td>${escapeHtml(patient.name)}</td>
-
-            <td>${patient.age}</td>
-
+            <td>${escapeHtml(patient.patientName)}</td>
+            <td>${escapeHtml(patient.age)}</td>
             <td>${escapeHtml(patient.gender)}</td>
-
-            <td>${escapeHtml(patient.phone)}</td>
+            <td>${escapeHtml(patient.phoneNumber)}</td>
 
             <td class="patient-address-cell">
                 ${escapeHtml(patient.address)}
@@ -207,7 +237,6 @@ function displayPatients(patientList) {
 
             <td>
                 <div class="action-buttons">
-
                     <button
                         type="button"
                         class="btn btn-warning btn-sm"
@@ -223,7 +252,6 @@ function displayPatients(patientList) {
                     >
                         <i class="bi bi-trash-fill"></i>
                     </button>
-
                 </div>
             </td>
         `;
@@ -232,107 +260,62 @@ function displayPatients(patientList) {
     });
 }
 
-function editPatient(patientId) {
-    const patient = patients.find(function (item) {
-        return item.id === patientId;
-    });
+function validatePatientForm() {
+    const phonePattern = /^[0-9]{10}$/;
+    const age = Number(patientAgeInput.value);
 
-    if (!patient) {
-        showMessage(
-            "Patient could not be found.",
-            "danger"
+    let isValid = true;
+
+    if (patientNameInput.value.trim() === "") {
+        isValid = false;
+    }
+
+    if (
+        patientAgeInput.value === "" ||
+        age < 0 ||
+        age > 120
+    ) {
+        isValid = false;
+    }
+
+    if (patientGenderInput.value === "") {
+        isValid = false;
+    }
+
+    if (!phonePattern.test(patientPhoneInput.value.trim())) {
+        patientPhoneInput.setCustomValidity(
+            "Enter a valid 10-digit phone number."
         );
-
-        return;
+        isValid = false;
+    } else {
+        patientPhoneInput.setCustomValidity("");
     }
 
-    patientIdInput.value = patient.id;
-    patientNameInput.value = patient.name;
-    patientAgeInput.value = patient.age;
-    patientGenderInput.value = patient.gender;
-    patientPhoneInput.value = patient.phone;
-    patientAddressInput.value = patient.address;
-
-    formTitle.textContent = "Update Patient";
-
-    saveButton.innerHTML = `
-        <i class="bi bi-pencil-square"></i>
-        Update Patient
-    `;
-
-    cancelButton.classList.remove("d-none");
-
-    patientForm.classList.remove("was-validated");
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-}
-
-function deletePatient(patientId) {
-    const patient = patients.find(function (item) {
-        return item.id === patientId;
-    });
-
-    if (!patient) {
-        return;
+    if (patientAddressInput.value.trim() === "") {
+        isValid = false;
     }
 
-    const confirmed = confirm(
-        `Are you sure you want to delete ${patient.name}?`
-    );
+    patientForm.classList.add("was-validated");
 
-    if (!confirmed) {
-        return;
-    }
-
-    patients = patients.filter(function (item) {
-        return item.id !== patientId;
-    });
-
-    savePatients();
-    displayPatients(patients);
-
-    showMessage(
-        "Patient deleted successfully.",
-        "success"
-    );
-
-    if (patientIdInput.value === patientId) {
-        resetPatientForm();
-    }
+    return isValid && patientForm.checkValidity();
 }
 
 function resetPatientForm() {
     patientForm.reset();
 
     patientIdInput.value = "";
+    patientPhoneInput.setCustomValidity("");
 
     patientForm.classList.remove("was-validated");
 
     formTitle.textContent = "Register Patient";
-
-    saveButton.innerHTML = `
-        <i class="bi bi-save-fill"></i>
-        Save Patient
-    `;
-
+    saveButton.textContent = "Save Patient";
     cancelButton.classList.add("d-none");
-}
-
-function savePatients() {
-    localStorage.setItem(
-        "patients",
-        JSON.stringify(patients)
-    );
 }
 
 function showMessage(message, type) {
     messageBox.textContent = message;
-
     messageBox.className = `alert alert-${type}`;
-
     messageBox.classList.remove("d-none");
 
     setTimeout(function () {
@@ -343,7 +326,37 @@ function showMessage(message, type) {
 function escapeHtml(value) {
     const temporaryElement = document.createElement("div");
 
-    temporaryElement.textContent = String(value);
+    temporaryElement.textContent =
+        value === null || value === undefined
+            ? ""
+            : String(value);
 
     return temporaryElement.innerHTML;
 }
+const searchPatient = document.getElementById("searchPatient");
+
+searchPatient.addEventListener("input", function () {
+
+    const searchValue = searchPatient.value
+        .toLowerCase()
+        .trim();
+
+    const rows = document.querySelectorAll(
+        "#patientTableBody tr"
+    );
+
+    rows.forEach(function (row) {
+
+        if (row.id === "emptyPatientRow") {
+            return;
+        }
+
+        const rowText = row.textContent.toLowerCase();
+
+        if (rowText.includes(searchValue)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+});
