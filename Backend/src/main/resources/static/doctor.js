@@ -1,7 +1,7 @@
 const doctorForm = document.getElementById("doctorForm");
 const doctorTable = document.getElementById("doctorTable");
 
-const doctorIdInput = document.getElementById("doctorId");
+
 const doctorNameInput = document.getElementById("doctorName");
 const specializationInput = document.getElementById("specialization");
 const phoneInput = document.getElementById("phone");
@@ -27,7 +27,6 @@ doctorForm.addEventListener("submit", function (event) {
     event.preventDefault();
 
     const doctor = {
-        id: doctorIdInput.value.trim(),
         name: doctorNameInput.value.trim(),
         specialization: specializationInput.value,
         phone: phoneInput.value.trim(),
