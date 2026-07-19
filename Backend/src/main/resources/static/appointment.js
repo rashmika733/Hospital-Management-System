@@ -1,3 +1,5 @@
+const API_URL = "/api/appointments";
+
 const appointmentForm =
     document.getElementById("appointmentForm");
 
@@ -16,113 +18,281 @@ const saveAppointmentButton =
 const editAppointmentIndex =
     document.getElementById("editAppointmentIndex");
 
-let appointments =
-    JSON.parse(localStorage.getItem("appointments")) || [];
+const appointmentIdInput =
+    document.getElementById("appointmentId");
 
-displayAppointments();
+let appointments = [];
 
-appointmentForm.addEventListener("submit", function (event) {
+document.addEventListener(
+    "DOMContentLoaded",
+    loadAppointments
+);
+
+appointmentForm.addEventListener(
+    "submit",
+    saveAppointment
+);
+
+appointmentSearch.addEventListener(
+    "input",
+    searchAppointments
+);
+
+async function loadAppointments() {
+
+    try {
+
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Failed to load appointments."
+            );
+        }
+
+        appointments = await response.json();
+
+        displayAppointments(appointments);
+
+    } catch (error) {
+
+        console.error(error);
+
+        showAppointmentMessage(
+            "Cannot load appointments.",
+            "danger"
+        );
+    }
+}
+
+async function saveAppointment(event) {
 
     event.preventDefault();
 
-    const appointment = {
-        appointmentId:
-            document.getElementById("appointmentId").value.trim(),
+    const appointmentId =
+        appointmentIdInput.value.trim();
 
-        patientName:
-            document.getElementById("patientName").value.trim(),
+    // Appointment ID must be A001, A002, A003...
+    const appointmentPattern = /^A\d{3}$/;
 
-        doctorName:
-            document.getElementById("doctorName").value.trim(),
+    if (!appointmentPattern.test(appointmentId)) {
 
-        specialization:
-            document.getElementById("specialization").value,
-
-        appointmentDate:
-            document.getElementById("appointmentDate").value,
-
-        appointmentTime:
-            document.getElementById("appointmentTime").value,
-
-        status:
-            document.getElementById("status").value,
-
-        reason:
-            document.getElementById("reason").value.trim()
-    };
-
-    const editingIndex =
-        Number(editAppointmentIndex.value);
-
-    const duplicateId = appointments.some(
-        function (item, index) {
-            return (
-                item.appointmentId.toLowerCase() ===
-                appointment.appointmentId.toLowerCase()
-                &&
-                index !== editingIndex
-            );
-        }
-    );
-
-    if (duplicateId) {
         showAppointmentMessage(
-            "Appointment ID already exists.",
+            "Appointment ID must be like A001, A002 or A003.",
             "danger"
         );
+
+        appointmentIdInput.focus();
 
         return;
     }
 
-    if (editingIndex === -1) {
+    const patientName =
+        document.getElementById("patientName")
+            .value.trim();
 
-        appointments.push(appointment);
+    const doctorName =
+        document.getElementById("doctorName")
+            .value.trim();
+
+    const specialization =
+        document.getElementById("specialization")
+            .value;
+
+    const appointmentDate =
+        document.getElementById("appointmentDate")
+            .value;
+
+    const appointmentTime =
+        document.getElementById("appointmentTime")
+            .value;
+
+    const status =
+        document.getElementById("status")
+            .value;
+
+    const reason =
+        document.getElementById("reason")
+            .value.trim();
+
+    if (patientName === "") {
 
         showAppointmentMessage(
-            "Appointment added successfully.",
-            "success"
+            "Please enter the patient name.",
+            "danger"
         );
 
-    } else {
+        document.getElementById("patientName").focus();
 
-        appointments[editingIndex] = appointment;
-
-        showAppointmentMessage(
-            "Appointment updated successfully.",
-            "success"
-        );
+        return;
     }
 
-    saveAppointments();
-    displayAppointments();
-    resetAppointmentForm();
-});
+    if (doctorName === "") {
 
-appointmentSearch.addEventListener("input", function () {
+        showAppointmentMessage(
+            "Please enter the doctor name.",
+            "danger"
+        );
 
-    const searchValue =
-        appointmentSearch.value.toLowerCase().trim();
+        document.getElementById("doctorName").focus();
 
-    const filteredAppointments =
-        appointments.filter(function (appointment) {
+        return;
+    }
 
-            return (
-                appointment.appointmentId.toLowerCase()
-                    .includes(searchValue)
-                ||
-                appointment.patientName.toLowerCase()
-                    .includes(searchValue)
-                ||
-                appointment.doctorName.toLowerCase()
-                    .includes(searchValue)
-                ||
-                appointment.status.toLowerCase()
-                    .includes(searchValue)
+    if (specialization === "") {
+
+        showAppointmentMessage(
+            "Please select the specialization.",
+            "danger"
+        );
+
+        document.getElementById("specialization").focus();
+
+        return;
+    }
+
+    if (appointmentDate === "") {
+
+        showAppointmentMessage(
+            "Please select the appointment date.",
+            "danger"
+        );
+
+        document.getElementById("appointmentDate").focus();
+
+        return;
+    }
+
+    if (appointmentTime === "") {
+
+        showAppointmentMessage(
+            "Please select the appointment time.",
+            "danger"
+        );
+
+        document.getElementById("appointmentTime").focus();
+
+        return;
+    }
+
+    if (status === "") {
+
+        showAppointmentMessage(
+            "Please select the appointment status.",
+            "danger"
+        );
+
+        document.getElementById("status").focus();
+
+        return;
+    }
+
+    const appointment = {
+
+        appointmentId: appointmentId,
+
+        patientName: patientName,
+
+        doctorName: doctorName,
+
+        specialization: specialization,
+
+        appointmentDate: appointmentDate,
+
+        appointmentTime: appointmentTime,
+
+        status: status,
+
+        reason: reason
+    };
+
+    const originalAppointmentId =
+        editAppointmentIndex.value;
+
+    const isEditing =
+        originalAppointmentId !== "-1";
+
+    if (!isEditing) {
+
+        const duplicateAppointment =
+            appointments.some(function (item) {
+
+                return item.appointmentId
+                        .toUpperCase() ===
+                    appointmentId.toUpperCase();
+            });
+
+        if (duplicateAppointment) {
+
+            showAppointmentMessage(
+                "This Appointment ID already exists.",
+                "danger"
             );
-        });
 
-    displayAppointments(filteredAppointments);
-});
+            appointmentIdInput.focus();
+
+            return;
+        }
+    }
+
+    const url = isEditing
+        ? `${API_URL}/${encodeURIComponent(
+            originalAppointmentId
+        )}`
+        : API_URL;
+
+    const method = isEditing
+        ? "PUT"
+        : "POST";
+
+    try {
+
+        const response = await fetch(
+            url,
+            {
+                method: method,
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify(appointment)
+            }
+        );
+
+        if (!response.ok) {
+
+            const errorMessage =
+                await response.text();
+
+            throw new Error(
+                errorMessage ||
+                "Appointment could not be saved."
+            );
+        }
+
+        showAppointmentMessage(
+            isEditing
+                ? "Appointment updated successfully."
+                : "Appointment added successfully.",
+            "success"
+        );
+
+        resetAppointmentForm();
+
+        await loadAppointments();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showAppointmentMessage(
+            error.message,
+            "danger"
+        );
+    }
+}
 
 function displayAppointments(
     appointmentList = appointments
@@ -148,48 +318,94 @@ function displayAppointments(
 
     appointmentList.forEach(function (appointment) {
 
-        const originalIndex =
-            appointments.indexOf(appointment);
-
-        let badgeClass = "bg-warning text-dark";
+        let badgeClass =
+            "bg-warning text-dark";
 
         if (appointment.status === "Completed") {
+
             badgeClass = "bg-success";
         }
 
         if (appointment.status === "Cancelled") {
+
             badgeClass = "bg-danger";
         }
 
-        const row = document.createElement("tr");
+        const row =
+            document.createElement("tr");
 
         row.innerHTML = `
-            <td>${appointment.appointmentId}</td>
-            <td>${appointment.patientName}</td>
-            <td>${appointment.doctorName}</td>
-            <td>${appointment.specialization}</td>
-            <td>${appointment.appointmentDate}</td>
-            <td>${appointment.appointmentTime}</td>
+            <td>
+                ${escapeHtml(
+            appointment.appointmentId
+        )}
+            </td>
+
+            <td>
+                ${escapeHtml(
+            appointment.patientName
+        )}
+            </td>
+
+            <td>
+                ${escapeHtml(
+            appointment.doctorName
+        )}
+            </td>
+
+            <td>
+                ${escapeHtml(
+            appointment.specialization
+        )}
+            </td>
+
+            <td>
+                ${escapeHtml(
+            appointment.appointmentDate
+        )}
+            </td>
+
+            <td>
+                ${escapeHtml(
+            appointment.appointmentTime
+        )}
+            </td>
 
             <td>
                 <span class="badge ${badgeClass}">
-                    ${appointment.status}
+                    ${escapeHtml(
+            appointment.status
+        )}
                 </span>
             </td>
 
-            <td>${appointment.reason}</td>
+            <td>
+                ${escapeHtml(
+            appointment.reason
+        )}
+            </td>
 
             <td>
                 <button
+                    type="button"
                     class="btn btn-sm btn-warning mb-1"
-                    onclick="editAppointment(${originalIndex})"
+                    onclick="editAppointment(
+                        '${encodeURIComponent(
+            appointment.appointmentId
+        )}'
+                    )"
                 >
                     Edit
                 </button>
 
                 <button
+                    type="button"
                     class="btn btn-sm btn-danger mb-1"
-                    onclick="deleteAppointment(${originalIndex})"
+                    onclick="deleteAppointment(
+                        '${encodeURIComponent(
+            appointment.appointmentId
+        )}'
+                    )"
                 >
                     Delete
                 </button>
@@ -198,16 +414,33 @@ function displayAppointments(
 
         appointmentTableBody.appendChild(row);
     });
-
-    updateAppointmentCount();
 }
 
-function editAppointment(index) {
+function editAppointment(encodedId) {
 
-    const appointment = appointments[index];
+    const appointmentId =
+        decodeURIComponent(encodedId);
 
-    document.getElementById("appointmentId").value =
+    const appointment =
+        appointments.find(function (item) {
+
+            return item.appointmentId === appointmentId;
+        });
+
+    if (!appointment) {
+
+        showAppointmentMessage(
+            "Appointment not found.",
+            "danger"
+        );
+
+        return;
+    }
+
+    appointmentIdInput.value =
         appointment.appointmentId;
+
+    appointmentIdInput.readOnly = true;
 
     document.getElementById("patientName").value =
         appointment.patientName;
@@ -228,9 +461,10 @@ function editAppointment(index) {
         appointment.status;
 
     document.getElementById("reason").value =
-        appointment.reason;
+        appointment.reason || "";
 
-    editAppointmentIndex.value = index;
+    editAppointmentIndex.value =
+        appointment.appointmentId;
 
     saveAppointmentButton.textContent =
         "Update Appointment";
@@ -241,32 +475,82 @@ function editAppointment(index) {
     });
 }
 
-function deleteAppointment(index) {
+async function deleteAppointment(encodedId) {
 
-    const confirmed =
-        confirm("Do you want to delete this appointment?");
+    const appointmentId =
+        decodeURIComponent(encodedId);
+
+    const confirmed = confirm(
+        "Do you want to delete this appointment?"
+    );
 
     if (!confirmed) {
+
         return;
     }
 
-    appointments.splice(index, 1);
+    try {
 
-    saveAppointments();
-    displayAppointments();
+        const response = await fetch(
+            `${API_URL}/${encodeURIComponent(
+                appointmentId
+            )}`,
+            {
+                method: "DELETE"
+            }
+        );
 
-    showAppointmentMessage(
-        "Appointment deleted successfully.",
-        "success"
-    );
+        if (!response.ok) {
+
+            const errorMessage =
+                await response.text();
+
+            throw new Error(
+                errorMessage ||
+                "Appointment could not be deleted."
+            );
+        }
+
+        showAppointmentMessage(
+            "Appointment deleted successfully.",
+            "success"
+        );
+
+        resetAppointmentForm();
+
+        await loadAppointments();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showAppointmentMessage(
+            error.message,
+            "danger"
+        );
+    }
 }
 
-function saveAppointments() {
+function searchAppointments() {
 
-    localStorage.setItem(
-        "appointments",
-        JSON.stringify(appointments)
-    );
+    const searchValue =
+        appointmentSearch.value
+            .toLowerCase()
+            .trim();
+
+    const filteredAppointments =
+        appointments.filter(function (appointment) {
+
+            return Object.values(appointment)
+                .some(function (value) {
+
+                    return String(value || "")
+                        .toLowerCase()
+                        .includes(searchValue);
+                });
+        });
+
+    displayAppointments(filteredAppointments);
 }
 
 function resetAppointmentForm() {
@@ -274,6 +558,8 @@ function resetAppointmentForm() {
     appointmentForm.reset();
 
     editAppointmentIndex.value = "-1";
+
+    appointmentIdInput.readOnly = false;
 
     saveAppointmentButton.textContent =
         "Save Appointment";
@@ -286,17 +572,28 @@ function showAppointmentMessage(message, type) {
     appointmentMessage.className =
         `alert alert-${type}`;
 
-    appointmentMessage.classList.remove("d-none");
+    appointmentMessage.classList.remove(
+        "d-none"
+    );
 
     setTimeout(function () {
-        appointmentMessage.classList.add("d-none");
+
+        appointmentMessage.classList.add(
+            "d-none"
+        );
+
     }, 3000);
 }
 
-function updateAppointmentCount() {
+function escapeHtml(value) {
 
-    localStorage.setItem(
-        "appointmentCount",
-        appointments.length.toString()
-    );
+    const element =
+        document.createElement("div");
+
+    element.textContent =
+        value === null || value === undefined
+            ? ""
+            : String(value);
+
+    return element.innerHTML;
 }
