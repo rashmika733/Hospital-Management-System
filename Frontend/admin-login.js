@@ -1,79 +1,84 @@
 const adminLoginForm =
     document.getElementById("adminLoginForm");
 
-const adminEmail =
+const adminEmailInput =
     document.getElementById("adminEmail");
 
-const adminPassword =
+const adminPasswordInput =
     document.getElementById("adminPassword");
-
-const togglePassword =
-    document.getElementById("togglePassword");
-
-const passwordIcon =
-    document.getElementById("passwordIcon");
 
 const loginMessage =
     document.getElementById("loginMessage");
 
-togglePassword.addEventListener("click", function () {
+adminLoginForm.addEventListener(
+    "submit",
+    async function (event) {
 
-    const isPassword =
-        adminPassword.type === "password";
+        event.preventDefault();
 
-    adminPassword.type =
-        isPassword ? "text" : "password";
+        const loginData = {
+            email:
+                adminEmailInput.value.trim(),
 
-    passwordIcon.className =
-        isPassword
-            ? "bi bi-eye-slash-fill"
-            : "bi bi-eye-fill";
-});
+            password:
+                adminPasswordInput.value
+        };
 
-adminLoginForm.addEventListener("submit", function (event) {
+        try {
 
-    event.preventDefault();
+            const response = await fetch(
+                "/api/auth/login",
+                {
+                    method: "POST",
 
-    const email = adminEmail.value.trim();
-    const password = adminPassword.value.trim();
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-    if (email === "" || password === "") {
-        showLoginMessage(
-            "Please enter email and password.",
-            "danger"
-        );
+                    credentials: "same-origin",
 
-        return;
+                    body: JSON.stringify(loginData)
+                }
+            );
+
+            const result =
+                await response.json();
+
+            if (!response.ok) {
+                showLoginMessage(
+                    result.message ||
+                    "Login failed.",
+                    "danger"
+                );
+
+                return;
+            }
+
+            sessionStorage.setItem(
+                "adminLoggedIn",
+                "true"
+            );
+
+            sessionStorage.setItem(
+                "adminEmail",
+                result.email
+            );
+
+            window.location.href =
+                "index.html";
+
+        } catch (error) {
+
+            console.error(error);
+
+            showLoginMessage(
+                "Cannot connect to the server.",
+                "danger"
+            );
+        }
     }
-
-    if (password.length < 6) {
-        showLoginMessage(
-            "Password must contain at least 6 characters.",
-            "danger"
-        );
-
-        return;
-    }
-
-    sessionStorage.setItem(
-        "adminLoggedIn",
-        "true"
-    );
-
-    sessionStorage.setItem(
-        "adminEmail",
-        email
-    );
-
-    showLoginMessage(
-        "Login successful. Redirecting...",
-        "success"
-    );
-
-    setTimeout(function () {
-        window.location.href = "index.html";
-    }, 1000);
-});
+);
 
 function showLoginMessage(message, type) {
 
@@ -84,8 +89,3 @@ function showLoginMessage(message, type) {
 
     loginMessage.classList.remove("d-none");
 }
-
-sessionStorage.setItem("adminLoggedIn", "true");
-sessionStorage.setItem("adminEmail", email);
-
-window.location.href = "index.html";
