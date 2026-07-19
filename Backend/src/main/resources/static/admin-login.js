@@ -22,22 +22,18 @@ adminLoginForm.addEventListener(
         };
 
         try {
-
             const response = await fetch(
                 "/api/admins/login",
                 {
                     method: "POST",
-
                     headers: {
                         "Content-Type": "application/json"
                     },
-
                     body: JSON.stringify(loginData)
                 }
             );
 
             if (!response.ok) {
-
                 const errorMessage =
                     await response.text();
 
@@ -63,20 +59,16 @@ adminLoginForm.addEventListener(
                 admin.email
             );
 
-            showLoginMessage(
-                "Login successful.",
-                "success"
+            sessionStorage.setItem(
+                "adminName",
+                admin.fullName
             );
 
-            setTimeout(function () {
-
-                window.location.href =
-                    "index.html";
-
-            }, 800);
+            window.location.replace(
+                "/index.html"
+            );
 
         } catch (error) {
-
             console.error(
                 "Login error:",
                 error
@@ -91,7 +83,6 @@ adminLoginForm.addEventListener(
 );
 
 function showLoginMessage(message, type) {
-
     loginMessage.textContent = message;
 
     loginMessage.className =

@@ -1,40 +1,8 @@
-document.addEventListener(
-    "DOMContentLoaded",
-    checkAuthentication
-);
+const adminLoggedIn =
+    sessionStorage.getItem("adminLoggedIn");
 
-async function checkAuthentication() {
+console.log("Login status:", adminLoggedIn);
 
-    try {
-
-        const response = await fetch(
-            "/api/auth/status",
-            {
-                method: "GET",
-                credentials: "same-origin"
-            }
-        );
-
-        const result =
-            await response.json();
-
-        if (!result.authenticated) {
-
-            sessionStorage.clear();
-
-            window.location.replace(
-                "admin-login.html"
-            );
-        }
-
-    } catch (error) {
-
-        console.error(error);
-
-        sessionStorage.clear();
-
-        window.location.replace(
-            "admin-login.html"
-        );
-    }
+if (adminLoggedIn !== "true") {
+    window.location.replace("/admin-login.html");
 }
