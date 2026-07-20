@@ -4,9 +4,12 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("logoutButton");
 
     if (logoutButton) {
+
         logoutButton.addEventListener("click", function () {
+
             sessionStorage.clear();
-            window.location.href = "admin-login.html";
+
+            window.location.replace("/admin-login.html");
         });
     }
 
