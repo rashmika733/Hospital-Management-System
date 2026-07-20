@@ -1,31 +1,71 @@
-const billingForm =
-    document.getElementById("billingForm");
+const API_URL = "/api/bills";
 
-const billTableBody =
-    document.getElementById("billTableBody");
+const billingForm = document.getElementById("billingForm");
+const billTableBody = document.getElementById("billTableBody");
+const billMessage = document.getElementById("billMessage");
 
-const billMessage =
-    document.getElementById("billMessage");
+const billIdInput = document.getElementById("billId");
+const patientIdInput = document.getElementById("billPatientId");
+const patientNameInput = document.getElementById("billPatientName");
+const billDateInput = document.getElementById("billDate");
 
-const doctorFeeInput =
-    document.getElementById("doctorFee");
+const doctorFeeInput = document.getElementById("doctorFee");
+const medicineFeeInput = document.getElementById("medicineFee");
+const otherFeeInput = document.getElementById("otherFee");
 
-const medicineFeeInput =
-    document.getElementById("medicineFee");
+const paymentStatusInput = document.getElementById("paymentStatus");
+const totalAmountInput = document.getElementById("totalAmount");
+const clearBillButton = document.getElementById("clearBillButton");
 
-const otherFeeInput =
-    document.getElementById("otherFee");
+const submitButton =
+    billingForm.querySelector('button[type="submit"]');
 
-const totalAmountInput =
-    document.getElementById("totalAmount");
+let bills = [];
+let editingMongoId = null;
 
-let bills =
-    JSON.parse(localStorage.getItem("bills")) || [];
-let editingBillIndex = -1;
 
-displayBills();
-setCurrentDate();
-calculateTotal();
+/* Page load */
+document.addEventListener("DOMContentLoaded", function () {
+    setTodayDate();
+    calculateTotal();
+    loadBills();
+});
+
+
+/* Today's date input එකට දානවා */
+function setTodayDate() {
+    if (billDateInput.value === "") {
+        const today = new Date();
+
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1)
+            .padStart(2, "0");
+        const day = String(today.getDate())
+            .padStart(2, "0");
+
+        billDateInput.value = `${year}-${month}-${day}`;
+    }
+}
+
+
+/* Total auto calculate */
+function calculateTotal() {
+    const doctorFee =
+        Number(doctorFeeInput.value) || 0;
+
+    const medicineFee =
+        Number(medicineFeeInput.value) || 0;
+
+    const otherFee =
+        Number(otherFeeInput.value) || 0;
+
+    const total =
+        doctorFee + medicineFee + otherFee;
+
+    totalAmountInput.value =
+        total.toFixed(2);
+}
+
 
 doctorFeeInput.addEventListener(
     "input",
@@ -42,134 +82,261 @@ otherFeeInput.addEventListener(
     calculateTotal
 );
 
-billingForm.addEventListener("submit", function (event) {
 
-    event.preventDefault();
+/* MongoDB එකෙන් bills load කරනවා */
+async function loadBills() {
+    try {
+        const response = await fetch(API_URL);
 
-    const bill = {
-        billId:
-            document.getElementById("billId").value.trim(),
+        if (!response.ok) {
+            throw new Error(
+                "Bills could not be loaded."
+            );
+        }
 
-        patientId:
-            document.getElementById("billPatientId").value.trim(),
+        bills = await response.json();
 
-        patientName:
-            document.getElementById("billPatientName").value.trim(),
+        displayBills(bills);
 
-        billDate:
-            document.getElementById("billDate").value,
-
-        doctorFee:
-            Number(doctorFeeInput.value) || 0,
-
-        medicineFee:
-            Number(medicineFeeInput.value) || 0,
-
-        otherFee:
-            Number(otherFeeInput.value) || 0,
-
-        total:
-            calculateTotal(),
-
-        paymentStatus:
-            document.getElementById("paymentStatus").value
-    };
-
-    const duplicateBill =
-    bills.some(function (existingBill, index) {
-
-        return (
-            existingBill.billId.toLowerCase() ===
-            bill.billId.toLowerCase() &&
-            index !== editingBillIndex
+    } catch (error) {
+        console.error(
+            "Load bills error:",
+            error
         );
-    });
 
-    if (duplicateBill) {
-
-        showBillMessage(
-            "Bill ID already exists.",
+        showMessage(
+            "Cannot load bill records.",
             "danger"
         );
 
-        return;
+        billTableBody.innerHTML = `
+            <tr>
+                <td
+                    colspan="10"
+                    class="text-center text-danger py-4"
+                >
+                    Cannot load bill records.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+
+/* Add හෝ Update Bill */
+billingForm.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+        const bill = {
+            billId:
+                billIdInput.value.trim(),
+
+            patientId:
+                patientIdInput.value.trim(),
+
+            patientName:
+                patientNameInput.value.trim(),
+
+            billDate:
+            billDateInput.value,
+
+            doctorFee:
+                Number(doctorFeeInput.value),
+
+            medicineFee:
+                Number(medicineFeeInput.value),
+
+            otherFee:
+                Number(otherFeeInput.value),
+
+            paymentStatus:
+            paymentStatusInput.value
+        };
+
+        if (!validateBill(bill)) {
+            return;
+        }
+
+        if (hasDuplicateBillId(bill)) {
+            return;
+        }
+
+        try {
+            let response;
+
+            if (editingMongoId === null) {
+
+                response = await fetch(
+                    API_URL,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body: JSON.stringify(bill)
+                    }
+                );
+
+            } else {
+
+                response = await fetch(
+                    `${API_URL}/${editingMongoId}`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body: JSON.stringify(bill)
+                    }
+                );
+            }
+
+            if (!response.ok) {
+                const errorMessage =
+                    await response.text();
+
+                throw new Error(
+                    errorMessage ||
+                    "Bill could not be saved."
+                );
+            }
+
+            if (editingMongoId === null) {
+                showMessage(
+                    "Bill generated successfully.",
+                    "success"
+                );
+            } else {
+                showMessage(
+                    "Bill updated successfully.",
+                    "success"
+                );
+            }
+
+            resetBillingForm();
+
+            await loadBills();
+
+        } catch (error) {
+            console.error(
+                "Save bill error:",
+                error
+            );
+
+            showMessage(
+                error.message ||
+                "Bill could not be saved.",
+                "danger"
+            );
+        }
+    }
+);
+
+
+/* Validation */
+function validateBill(bill) {
+    if (bill.billId === "") {
+        showMessage(
+            "Enter Bill ID.",
+            "warning"
+        );
+
+        billIdInput.focus();
+        return false;
     }
 
-    if (editingBillIndex === -1) {
+    if (bill.patientId === "") {
+        showMessage(
+            "Enter Patient ID.",
+            "warning"
+        );
 
-    bills.push(bill);
+        patientIdInput.focus();
+        return false;
+    }
 
-    showBillMessage(
-        "Bill generated successfully.",
-        "success"
-    );
+    if (bill.patientName === "") {
+        showMessage(
+            "Enter Patient Name.",
+            "warning"
+        );
 
-} else {
+        patientNameInput.focus();
+        return false;
+    }
 
-    bills[editingBillIndex] = bill;
+    if (bill.billDate === "") {
+        showMessage(
+            "Select Bill Date.",
+            "warning"
+        );
 
-    editingBillIndex = -1;
+        billDateInput.focus();
+        return false;
+    }
 
-    showBillMessage(
-        "Bill updated successfully.",
-        "success"
-    );
+    if (
+        bill.doctorFee < 0 ||
+        bill.medicineFee < 0 ||
+        bill.otherFee < 0
+    ) {
+        showMessage(
+            "Fees cannot be negative.",
+            "warning"
+        );
+
+        return false;
+    }
+
+    return true;
 }
 
-saveBills();
-displayBills();
 
-    billingForm.reset();
+/* Duplicate Bill ID check */
+function hasDuplicateBillId(bill) {
+    const duplicateBill =
+        bills.some(function (existingBill) {
 
-editingBillIndex = -1;
+            return (
+                String(existingBill.billId || "")
+                    .toLowerCase() ===
+                bill.billId.toLowerCase() &&
 
-const submitButton =
-    billingForm.querySelector(
-        'button[type="submit"]'
-    );
+                existingBill.id !== editingMongoId
+            );
+        });
 
-if (submitButton) {
-    submitButton.textContent =
-        "Generate Bill";
+    if (duplicateBill) {
+        showMessage(
+            "Bill ID already exists.",
+            "warning"
+        );
+
+        billIdInput.focus();
+        return true;
+    }
+
+    return false;
 }
 
-setCurrentDate();
-calculateTotal();
-});
 
-function calculateTotal() {
-
-    const doctorFee =
-        Number(doctorFeeInput.value) || 0;
-
-    const medicineFee =
-        Number(medicineFeeInput.value) || 0;
-
-    const otherFee =
-        Number(otherFeeInput.value) || 0;
-
-    const total =
-        doctorFee + medicineFee + otherFee;
-
-    totalAmountInput.value =
-        total.toFixed(2);
-
-    return total;
-}
-
-function displayBills() {
-
+/* Table display */
+function displayBills(billList) {
     billTableBody.innerHTML = "";
 
-    if (bills.length === 0) {
-
+    if (billList.length === 0) {
         billTableBody.innerHTML = `
             <tr>
                 <td
                     colspan="10"
                     class="text-center text-muted py-4"
                 >
-                    No bills generated yet.
+                    No bill records found.
                 </td>
             </tr>
         `;
@@ -177,269 +344,243 @@ function displayBills() {
         return;
     }
 
-    bills.forEach(function (bill, index) {
+    billList.forEach(function (bill) {
+        const row =
+            document.createElement("tr");
 
         const statusClass =
             bill.paymentStatus === "Paid"
                 ? "bg-success"
                 : "bg-warning text-dark";
 
-        const row = document.createElement("tr");
-
         row.innerHTML = `
-            <td>${bill.billId}</td>
-            <td>${bill.patientId}</td>
-            <td>${bill.patientName}</td>
-            <td>${bill.billDate}</td>
-            <td>${bill.doctorFee.toFixed(2)}</td>
-            <td>${bill.medicineFee.toFixed(2)}</td>
-            <td>${bill.otherFee.toFixed(2)}</td>
+            <td>
+                ${escapeHtml(bill.billId)}
+            </td>
+
+            <td>
+                ${escapeHtml(bill.patientId)}
+            </td>
+
+            <td>
+                ${escapeHtml(bill.patientName)}
+            </td>
+
+            <td>
+                ${escapeHtml(bill.billDate)}
+            </td>
+
+            <td>
+                Rs. ${formatAmount(bill.doctorFee)}
+            </td>
+
+            <td>
+                Rs. ${formatAmount(bill.medicineFee)}
+            </td>
+
+            <td>
+                Rs. ${formatAmount(bill.otherFee)}
+            </td>
+
             <td class="fw-bold">
-                ${bill.total.toFixed(2)}
+                Rs. ${formatAmount(bill.totalAmount)}
             </td>
 
             <td>
                 <span class="badge ${statusClass}">
-                    ${bill.paymentStatus}
+                    ${escapeHtml(bill.paymentStatus)}
                 </span>
             </td>
 
             <td>
-    <button
-        class="btn btn-sm btn-warning mb-1"
-        onclick="editBill(${index})"
-    >
-        Edit
-    </button>
+                <button
+                    type="button"
+                    class="btn btn-warning btn-sm mb-1"
+                    onclick="editBill('${bill.id}')"
+                >
+                    <i class="bi bi-pencil-square"></i>
+                    Edit
+                </button>
 
-    <button
-        class="btn btn-sm btn-secondary mb-1"
-        onclick="printBill(${index})"
-    >
-        Print
-    </button>
-
-    <button
-        class="btn btn-sm btn-danger mb-1"
-        onclick="deleteBill(${index})"
-    >
-        Delete
-    </button>
-</td>
+                <button
+                    type="button"
+                    class="btn btn-danger btn-sm mb-1"
+                    onclick="deleteBill('${bill.id}')"
+                >
+                    <i class="bi bi-trash-fill"></i>
+                    Delete
+                </button>
+            </td>
         `;
 
         billTableBody.appendChild(row);
     });
-
-    localStorage.setItem(
-        "billCount",
-        bills.length.toString()
-    );
 }
 
-function markBillAsPaid(index) {
 
-    bills[index].paymentStatus = "Paid";
+/* Edit Bill */
+function editBill(mongoId) {
+    const bill =
+        bills.find(function (item) {
+            return item.id === mongoId;
+        });
 
-    saveBills();
-    displayBills();
+    if (!bill) {
+        showMessage(
+            "Bill could not be found.",
+            "danger"
+        );
 
-    showBillMessage(
-        "Bill marked as paid.",
-        "success"
-    );
-}
+        return;
+    }
 
-function editBill(index) {
+    editingMongoId = bill.id;
 
-    const bill = bills[index];
+    billIdInput.value =
+        bill.billId || "";
 
-    editingBillIndex = index;
+    patientIdInput.value =
+        bill.patientId || "";
 
-    document.getElementById("billId").value =
-        bill.billId;
+    patientNameInput.value =
+        bill.patientName || "";
 
-    document.getElementById("billPatientId").value =
-        bill.patientId;
-
-    document.getElementById("billPatientName").value =
-        bill.patientName;
-
-    document.getElementById("billDate").value =
-        bill.billDate;
+    billDateInput.value =
+        bill.billDate || "";
 
     doctorFeeInput.value =
-        bill.doctorFee;
+        bill.doctorFee ?? 0;
 
     medicineFeeInput.value =
-        bill.medicineFee;
+        bill.medicineFee ?? 0;
 
     otherFeeInput.value =
-        bill.otherFee;
+        bill.otherFee ?? 0;
 
-    document.getElementById("paymentStatus").value =
-        bill.paymentStatus;
+    paymentStatusInput.value =
+        bill.paymentStatus || "Pending";
+
+    billIdInput.readOnly = true;
 
     calculateTotal();
 
-    const submitButton =
-        billingForm.querySelector(
-            'button[type="submit"]'
-        );
-
-    if (submitButton) {
-        submitButton.textContent =
-            "Update Bill";
-    }
+    submitButton.innerHTML = `
+        <i class="bi bi-pencil-square"></i>
+        Update Bill
+    `;
 
     window.scrollTo({
         top: 0,
         behavior: "smooth"
     });
 }
-function deleteBill(index) {
 
-    const confirmed =
-        confirm("Do you want to delete this bill?");
+
+/* Delete Bill */
+async function deleteBill(mongoId) {
+    const bill =
+        bills.find(function (item) {
+            return item.id === mongoId;
+        });
+
+    if (!bill) {
+        showMessage(
+            "Bill could not be found.",
+            "danger"
+        );
+
+        return;
+    }
+
+    const confirmed = confirm(
+        `Are you sure you want to delete bill ${bill.billId}?`
+    );
 
     if (!confirmed) {
         return;
     }
 
-    bills.splice(index, 1);
+    try {
+        const response = await fetch(
+            `${API_URL}/${mongoId}`,
+            {
+                method: "DELETE"
+            }
+        );
 
-    saveBills();
-    displayBills();
+        if (!response.ok) {
+            const errorMessage =
+                await response.text();
 
-    showBillMessage(
-        "Bill deleted successfully.",
-        "success"
-    );
+            throw new Error(
+                errorMessage ||
+                "Bill could not be deleted."
+            );
+        }
+
+        if (editingMongoId === mongoId) {
+            resetBillingForm();
+        }
+
+        showMessage(
+            "Bill deleted successfully.",
+            "success"
+        );
+
+        await loadBills();
+
+    } catch (error) {
+        console.error(
+            "Delete bill error:",
+            error
+        );
+
+        showMessage(
+            error.message ||
+            "Bill could not be deleted.",
+            "danger"
+        );
+    }
 }
 
-function printBill(index) {
 
-    const bill = bills[index];
+/* Clear button */
+clearBillButton.addEventListener(
+    "click",
+    function () {
 
-    const printWindow = window.open("", "", "width=700,height=700");
+        setTimeout(function () {
+            resetBillingForm();
+        }, 0);
+    }
+);
 
-    printWindow.document.write(`
-        <html>
-        <head>
-            <title>Hospital Bill</title>
 
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    padding: 40px;
-                }
+/* Form reset */
+function resetBillingForm() {
+    billingForm.reset();
 
-                h2 {
-                    text-align: center;
-                }
+    editingMongoId = null;
 
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-top: 25px;
-                }
+    billIdInput.readOnly = false;
 
-                th,
-                td {
-                    border: 1px solid #333;
-                    padding: 10px;
-                    text-align: left;
-                }
+    doctorFeeInput.value = 0;
+    medicineFeeInput.value = 0;
+    otherFeeInput.value = 0;
+    paymentStatusInput.value = "Pending";
 
-                .total {
-                    font-size: 20px;
-                    font-weight: bold;
-                    text-align: right;
-                    margin-top: 25px;
-                }
-            </style>
-        </head>
+    setTodayDate();
+    calculateTotal();
 
-        <body>
-
-            <h2>Hospital Management System</h2>
-            <h3>Patient Bill</h3>
-
-            <p><strong>Bill ID:</strong> ${bill.billId}</p>
-
-            <p>
-                <strong>Patient ID:</strong>
-                ${bill.patientId}
-            </p>
-
-            <p>
-                <strong>Patient Name:</strong>
-                ${bill.patientName}
-            </p>
-
-            <p>
-                <strong>Date:</strong>
-                ${bill.billDate}
-            </p>
-
-            <table>
-                <tr>
-                    <th>Description</th>
-                    <th>Amount</th>
-                </tr>
-
-                <tr>
-                    <td>Doctor Fee</td>
-                    <td>${bill.doctorFee.toFixed(2)}</td>
-                </tr>
-
-                <tr>
-                    <td>Medicine Fee</td>
-                    <td>${bill.medicineFee.toFixed(2)}</td>
-                </tr>
-
-                <tr>
-                    <td>Other Charges</td>
-                    <td>${bill.otherFee.toFixed(2)}</td>
-                </tr>
-            </table>
-
-            <p class="total">
-                Total: Rs. ${bill.total.toFixed(2)}
-            </p>
-
-            <p>
-                <strong>Payment Status:</strong>
-                ${bill.paymentStatus}
-            </p>
-
-        </body>
-        </html>
-    `);
-
-    printWindow.document.close();
-    printWindow.print();
+    submitButton.innerHTML = `
+        <i class="bi bi-receipt"></i>
+        Generate Bill
+    `;
 }
 
-function saveBills() {
 
-    localStorage.setItem(
-        "bills",
-        JSON.stringify(bills)
-    );
-}
-
-function setCurrentDate() {
-
-    const today =
-        new Date().toISOString().split("T")[0];
-
-    document.getElementById("billDate").value =
-        today;
-}
-
-function showBillMessage(message, type) {
-
+/* Message display */
+function showMessage(message, type) {
     billMessage.textContent = message;
 
     billMessage.className =
@@ -449,5 +590,23 @@ function showBillMessage(message, type) {
 
     setTimeout(function () {
         billMessage.classList.add("d-none");
-    }, 3000);
+    }, 4000);
+}
+
+
+/* Amount format */
+function formatAmount(value) {
+    return Number(value || 0).toFixed(2);
+}
+
+
+/* HTML injection prevent */
+function escapeHtml(value) {
+    const temporaryElement =
+        document.createElement("div");
+
+    temporaryElement.textContent =
+        String(value ?? "");
+
+    return temporaryElement.innerHTML;
 }

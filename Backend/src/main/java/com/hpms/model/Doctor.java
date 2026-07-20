@@ -9,6 +9,7 @@ public class Doctor {
     @Id
     private String id;
 
+    private String doctorId;
     private String name;
     private String specialization;
     private String phone;
@@ -24,6 +25,14 @@ public class Doctor {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getDoctorId() {
+        return doctorId;
+    }
+
+    public void setDoctorId(String doctorId) {
+        this.doctorId = doctorId;
     }
 
     public String getName() {

@@ -1,29 +1,55 @@
+const API_URL = "/api/doctors";
+
 const doctorForm = document.getElementById("doctorForm");
 const doctorTable = document.getElementById("doctorTable");
-
-
 const doctorNameInput = document.getElementById("doctorName");
 const specializationInput = document.getElementById("specialization");
 const phoneInput = document.getElementById("phone");
 const emailInput = document.getElementById("email");
 const roomInput = document.getElementById("room");
-
 const searchDoctorInput = document.getElementById("searchDoctor");
 const totalDoctorsElement = document.getElementById("totaldoctors");
+const submitButton = doctorForm.querySelector('button[type="submit"]');
 
-const submitButton =
-    doctorForm.querySelector('button[type="submit"]');
+let doctors = [];
+let editingMongoId = null;
 
-let doctors =
-    JSON.parse(localStorage.getItem("doctors")) || [];
 
-let editingDoctorId = null;
-
+/* Page load වෙද්දී doctors ගන්නවා */
 document.addEventListener("DOMContentLoaded", function () {
-    displayDoctors(doctors);
+    loadDoctors();
 });
 
-doctorForm.addEventListener("submit", function (event) {
+
+/* MongoDB එකෙන් doctors list එක load කරනවා */
+async function loadDoctors() {
+    try {
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+            throw new Error("Doctors could not be loaded.");
+        }
+
+        doctors = await response.json();
+
+        displayDoctors(doctors);
+
+    } catch (error) {
+        console.error("Load doctors error:", error);
+
+        doctorTable.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center text-danger py-4">
+                    Cannot load doctor records.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+
+/* Doctor add හෝ update කරනවා */
+doctorForm.addEventListener("submit", async function (event) {
     event.preventDefault();
 
     const doctor = {
@@ -38,114 +64,132 @@ doctorForm.addEventListener("submit", function (event) {
         return;
     }
 
-    const duplicateId = doctors.some(function (existingDoctor) {
-        return (
-            existingDoctor.id.toLowerCase() ===
-                doctor.id.toLowerCase() &&
-            existingDoctor.id !== editingDoctorId
-        );
-    });
-
-    if (duplicateId) {
-        alert("Doctor ID already exists.");
+    if (hasDuplicateDoctor(doctor)) {
         return;
     }
 
-    const duplicatePhone = doctors.some(function (existingDoctor) {
-        return (
-            existingDoctor.phone === doctor.phone &&
-            existingDoctor.id !== editingDoctorId
-        );
-    });
+    try {
+        let response;
 
-    if (duplicatePhone) {
-        alert("This phone number is already registered.");
-        return;
-    }
+        if (editingMongoId === null) {
 
-    const duplicateEmail = doctors.some(function (existingDoctor) {
-        return (
-            existingDoctor.email.toLowerCase() ===
-                doctor.email.toLowerCase() &&
-            existingDoctor.id !== editingDoctorId
-        );
-    });
+            response = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(doctor)
+            });
 
-    if (duplicateEmail) {
-        alert("This email address is already registered.");
-        return;
-    }
+        } else {
 
-    if (editingDoctorId === null) {
-        doctors.push(doctor);
-
-        alert("Doctor added successfully.");
-    } else {
-        const doctorIndex = doctors.findIndex(function (existingDoctor) {
-            return existingDoctor.id === editingDoctorId;
-        });
-
-        if (doctorIndex !== -1) {
-            doctors[doctorIndex] = doctor;
+            response = await fetch(`${API_URL}/${editingMongoId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(doctor)
+            });
         }
 
-        alert("Doctor updated successfully.");
-    }
+        if (!response.ok) {
+            const errorMessage = await response.text();
 
-    saveDoctors();
-    displayDoctors(doctors);
-    resetDoctorForm();
-});
+            throw new Error(
+                errorMessage || "Doctor could not be saved."
+            );
+        }
 
-searchDoctorInput.addEventListener("input", function () {
-    const searchValue =
-        searchDoctorInput.value.trim().toLowerCase();
+        if (editingMongoId === null) {
+            alert("Doctor added successfully.");
+        } else {
+            alert("Doctor updated successfully.");
+        }
 
-    const filteredDoctors = doctors.filter(function (doctor) {
-        return (
-            doctor.id.toLowerCase().includes(searchValue) ||
-            doctor.name.toLowerCase().includes(searchValue) ||
-            doctor.specialization.toLowerCase().includes(searchValue) ||
-            doctor.phone.includes(searchValue) ||
-            doctor.email.toLowerCase().includes(searchValue) ||
-            doctor.room.toLowerCase().includes(searchValue)
+        resetDoctorForm();
+        await loadDoctors();
+
+    } catch (error) {
+        console.error("Save doctor error:", error);
+
+        alert(
+            error.message || "Doctor could not be saved."
         );
-    });
-
-    displayDoctors(filteredDoctors);
+    }
 });
 
+
+/* Input validation */
 function validateDoctor(doctor) {
     const phonePattern = /^[0-9]{10}$/;
-
-    if (doctor.id === "") {
-        alert("Enter Doctor ID.");
-        return false;
-    }
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (doctor.name === "") {
         alert("Enter Doctor Name.");
+        doctorNameInput.focus();
+        return false;
+    }
+
+    if (doctor.specialization === "") {
+        alert("Select Doctor Specialization.");
+        specializationInput.focus();
         return false;
     }
 
     if (!phonePattern.test(doctor.phone)) {
         alert("Enter a valid 10-digit phone number.");
+        phoneInput.focus();
         return false;
     }
 
-    if (doctor.email === "") {
-        alert("Enter Doctor Email.");
+    if (!emailPattern.test(doctor.email)) {
+        alert("Enter a valid email address.");
+        emailInput.focus();
         return false;
     }
 
     if (doctor.room === "") {
         alert("Enter Room Number.");
+        roomInput.focus();
         return false;
     }
 
     return true;
 }
 
+
+/* Duplicate phone සහ email check */
+function hasDuplicateDoctor(doctor) {
+    const duplicatePhone = doctors.some(function (existingDoctor) {
+        return (
+            String(existingDoctor.phone || "") === doctor.phone &&
+            existingDoctor.id !== editingMongoId
+        );
+    });
+
+    if (duplicatePhone) {
+        alert("This phone number is already registered.");
+        return true;
+    }
+
+    const duplicateEmail = doctors.some(function (existingDoctor) {
+        return (
+            String(existingDoctor.email || "").toLowerCase() ===
+            doctor.email.toLowerCase() &&
+            existingDoctor.id !== editingMongoId
+        );
+    });
+
+    if (duplicateEmail) {
+        alert("This email address is already registered.");
+        return true;
+    }
+
+    return false;
+}
+
+
+/* Doctors table එක display කරනවා */
 function displayDoctors(doctorList) {
     doctorTable.innerHTML = "";
 
@@ -154,10 +198,7 @@ function displayDoctors(doctorList) {
     if (doctorList.length === 0) {
         doctorTable.innerHTML = `
             <tr>
-                <td
-                    colspan="7"
-                    class="text-center text-muted py-4"
-                >
+                <td colspan="7" class="text-center text-muted py-4">
                     No doctor records found.
                 </td>
             </tr>
@@ -171,17 +212,10 @@ function displayDoctors(doctorList) {
 
         row.innerHTML = `
             <td>${escapeHtml(doctor.id)}</td>
-
             <td>${escapeHtml(doctor.name)}</td>
-
-            <td>
-                ${escapeHtml(doctor.specialization)}
-            </td>
-
+            <td>${escapeHtml(doctor.specialization)}</td>
             <td>${escapeHtml(doctor.phone)}</td>
-
             <td>${escapeHtml(doctor.email)}</td>
-
             <td>${escapeHtml(doctor.room)}</td>
 
             <td>
@@ -209,9 +243,11 @@ function displayDoctors(doctorList) {
     });
 }
 
-function editDoctor(doctorId) {
+
+/* Doctor edit කරනවා */
+function editDoctor(mongoId) {
     const doctor = doctors.find(function (item) {
-        return item.id === doctorId;
+        return item.id === mongoId;
     });
 
     if (!doctor) {
@@ -219,21 +255,18 @@ function editDoctor(doctorId) {
         return;
     }
 
-    editingDoctorId = doctor.id;
+    editingMongoId = doctor.id;
 
-    doctorIdInput.value = doctor.id;
-    doctorNameInput.value = doctor.name;
-    specializationInput.value = doctor.specialization;
-    phoneInput.value = doctor.phone;
-    emailInput.value = doctor.email;
-    roomInput.value = doctor.room;
+    doctorNameInput.value = doctor.name || "";
+    specializationInput.value = doctor.specialization || "";
+    phoneInput.value = doctor.phone || "";
+    emailInput.value = doctor.email || "";
+    roomInput.value = doctor.room || "";
 
     submitButton.innerHTML = `
         <i class="bi bi-pencil-square"></i>
         Update Doctor
     `;
-
-    doctorIdInput.readOnly = true;
 
     window.scrollTo({
         top: 0,
@@ -241,9 +274,11 @@ function editDoctor(doctorId) {
     });
 }
 
-function deleteDoctor(doctorId) {
+
+/* Doctor delete කරනවා */
+async function deleteDoctor(mongoId) {
     const doctor = doctors.find(function (item) {
-        return item.id === doctorId;
+        return item.id === mongoId;
     });
 
     if (!doctor) {
@@ -259,26 +294,78 @@ function deleteDoctor(doctorId) {
         return;
     }
 
-    doctors = doctors.filter(function (item) {
-        return item.id !== doctorId;
-    });
+    try {
+        const response = await fetch(`${API_URL}/${mongoId}`, {
+            method: "DELETE"
+        });
 
-    saveDoctors();
-    displayDoctors(doctors);
+        if (!response.ok) {
+            const errorMessage = await response.text();
 
-    if (editingDoctorId === doctorId) {
-        resetDoctorForm();
+            throw new Error(
+                errorMessage || "Doctor could not be deleted."
+            );
+        }
+
+        if (editingMongoId === mongoId) {
+            resetDoctorForm();
+        }
+
+        alert("Doctor deleted successfully.");
+
+        await loadDoctors();
+
+    } catch (error) {
+        console.error("Delete doctor error:", error);
+
+        alert(
+            error.message || "Doctor could not be deleted."
+        );
     }
-
-    alert("Doctor deleted successfully.");
 }
 
+
+/* Search doctor */
+searchDoctorInput.addEventListener("input", function () {
+    const searchValue = searchDoctorInput.value
+        .trim()
+        .toLowerCase();
+
+    const filteredDoctors = doctors.filter(function (doctor) {
+        return (
+            String(doctor.id || "")
+                .toLowerCase()
+                .includes(searchValue) ||
+
+            String(doctor.name || "")
+                .toLowerCase()
+                .includes(searchValue) ||
+
+            String(doctor.specialization || "")
+                .toLowerCase()
+                .includes(searchValue) ||
+
+            String(doctor.phone || "")
+                .includes(searchValue) ||
+
+            String(doctor.email || "")
+                .toLowerCase()
+                .includes(searchValue) ||
+
+            String(doctor.room || "")
+                .toLowerCase()
+                .includes(searchValue)
+        );
+    });
+
+    displayDoctors(filteredDoctors);
+});
+
+
+/* Form reset කරනවා */
 function resetDoctorForm() {
     doctorForm.reset();
-
-    editingDoctorId = null;
-
-    doctorIdInput.readOnly = false;
+    editingMongoId = null;
 
     submitButton.innerHTML = `
         <i class="bi bi-person-plus-fill"></i>
@@ -286,23 +373,12 @@ function resetDoctorForm() {
     `;
 }
 
-function saveDoctors() {
-    localStorage.setItem(
-        "doctors",
-        JSON.stringify(doctors)
-    );
 
-    localStorage.setItem(
-        "doctorCount",
-        String(doctors.length)
-    );
-}
-
+/* Unsafe HTML prevent කරනවා */
 function escapeHtml(value) {
-    const temporaryElement =
-        document.createElement("div");
+    const temporaryElement = document.createElement("div");
 
-    temporaryElement.textContent = String(value);
+    temporaryElement.textContent = String(value ?? "");
 
     return temporaryElement.innerHTML;
 }
