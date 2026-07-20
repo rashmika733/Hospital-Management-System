@@ -5,29 +5,49 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (logoutButton) {
         logoutButton.addEventListener("click", function () {
-
             sessionStorage.clear();
-
-            window.location.href =
-                "admin-login.html";
+            window.location.href = "admin-login.html";
         });
     }
 
-    loadDashboardCounts();
+    const patientCountElement =
+        document.getElementById("patientCount");
+
+    const doctorCountElement =
+        document.getElementById("doctorCount");
+
+    const appointmentCountElement =
+        document.getElementById("appointmentCount");
+
+    const billCountElement =
+        document.getElementById("billCount");
+
+    if (
+        patientCountElement ||
+        doctorCountElement ||
+        appointmentCountElement ||
+        billCountElement
+    ) {
+        loadDashboardCounts();
+    }
 });
+
 
 async function loadDashboardCounts() {
 
     try {
 
-        const patientResponse =
-            await fetch("/api/patients");
-
-        const doctorResponse =
-            await fetch("/api/doctors");
-
-        const appointmentResponse =
-            await fetch("/api/appointments");
+        const [
+            patientResponse,
+            doctorResponse,
+            appointmentResponse,
+            billResponse
+        ] = await Promise.all([
+            fetch("/api/patients"),
+            fetch("/api/doctors"),
+            fetch("/api/appointments"),
+            fetch("/api/bills")
+        ]);
 
         const patientData =
             patientResponse.ok
@@ -44,25 +64,44 @@ async function loadDashboardCounts() {
                 ? await appointmentResponse.json()
                 : [];
 
-        document.getElementById("patientCount").textContent =
-            patientData.length;
+        const billData =
+            billResponse.ok
+                ? await billResponse.json()
+                : [];
 
-        document.getElementById("doctorCount").textContent =
-            doctorData.length;
+        const patientCountElement =
+            document.getElementById("patientCount");
 
-        document.getElementById("appointmentCount").textContent =
-            appointmentData.length;
+        const doctorCountElement =
+            document.getElementById("doctorCount");
 
-        // Billing API එක නැත්නම් 0 පෙන්වන්න
-        const billElement =
+        const appointmentCountElement =
+            document.getElementById("appointmentCount");
+
+        const billCountElement =
             document.getElementById("billCount");
 
-        if (billElement) {
-            billElement.textContent = "0";
+        if (patientCountElement) {
+            patientCountElement.textContent =
+                patientData.length;
+        }
+
+        if (doctorCountElement) {
+            doctorCountElement.textContent =
+                doctorData.length;
+        }
+
+        if (appointmentCountElement) {
+            appointmentCountElement.textContent =
+                appointmentData.length;
+        }
+
+        if (billCountElement) {
+            billCountElement.textContent =
+                billData.length;
         }
 
     } catch (error) {
-
         console.error(
             "Dashboard loading error:",
             error

@@ -392,25 +392,31 @@ function displayBills(billList) {
                 </span>
             </td>
 
-            <td>
-                <button
-                    type="button"
-                    class="btn btn-warning btn-sm mb-1"
-                    onclick="editBill('${bill.id}')"
-                >
-                    <i class="bi bi-pencil-square"></i>
-                    Edit
-                </button>
+          <td>
+    <button
+        type="button"
+        class="btn btn-primary btn-sm mb-1"
+        onclick="printBill('${bill.id}')">
+        <i class="bi bi-printer"></i>
+        Print
+    </button>
 
-                <button
-                    type="button"
-                    class="btn btn-danger btn-sm mb-1"
-                    onclick="deleteBill('${bill.id}')"
-                >
-                    <i class="bi bi-trash-fill"></i>
-                    Delete
-                </button>
-            </td>
+    <button
+        type="button"
+        class="btn btn-warning btn-sm mb-1"
+        onclick="editBill('${bill.id}')">
+        <i class="bi bi-pencil-square"></i>
+        Edit
+    </button>
+
+    <button
+        type="button"
+        class="btn btn-danger btn-sm mb-1"
+        onclick="deleteBill('${bill.id}')">
+        <i class="bi bi-trash-fill"></i>
+        Delete
+    </button>
+</td>
         `;
 
         billTableBody.appendChild(row);
@@ -609,4 +615,62 @@ function escapeHtml(value) {
         String(value ?? "");
 
     return temporaryElement.innerHTML;
+}
+function printBill(mongoId) {
+
+    const bill = bills.find(item => item.id === mongoId);
+
+    if (!bill) {
+        alert("Bill not found.");
+        return;
+    }
+
+    const printWindow = window.open("", "_blank");
+
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Hospital Bill</title>
+            <style>
+                body{
+                    font-family:Arial,sans-serif;
+                    padding:30px;
+                }
+                h2{
+                    text-align:center;
+                }
+                table{
+                    width:100%;
+                    border-collapse:collapse;
+                    margin-top:20px;
+                }
+                td,th{
+                    border:1px solid #000;
+                    padding:8px;
+                }
+            </style>
+        </head>
+
+        <body>
+
+            <h2>Hospital Bill</h2>
+
+            <table>
+                <tr><th>Bill ID</th><td>${bill.billId}</td></tr>
+                <tr><th>Patient ID</th><td>${bill.patientId}</td></tr>
+                <tr><th>Patient Name</th><td>${bill.patientName}</td></tr>
+                <tr><th>Date</th><td>${bill.billDate}</td></tr>
+                <tr><th>Doctor Fee</th><td>Rs. ${bill.doctorFee}</td></tr>
+                <tr><th>Medicine Fee</th><td>Rs. ${bill.medicineFee}</td></tr>
+                <tr><th>Other Fee</th><td>Rs. ${bill.otherFee}</td></tr>
+                <tr><th>Total</th><td>Rs. ${bill.totalAmount}</td></tr>
+                <tr><th>Status</th><td>${bill.paymentStatus}</td></tr>
+            </table>
+
+        </body>
+        </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.print();
 }

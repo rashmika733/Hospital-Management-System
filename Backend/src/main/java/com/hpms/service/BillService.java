@@ -25,7 +25,11 @@ public class BillService {
 
         bill.setTotalAmount(total);
 
-        return repository.save(bill);
+        Bill savedBill = repository.save(bill);
+
+        System.out.println("Saved Bill = " + savedBill);
+
+        return savedBill;
     }
 
     // Get all bills
@@ -38,10 +42,10 @@ public class BillService {
 
         bill.setId(id);
 
-        double total =
-                bill.getDoctorFee()
-                        + bill.getMedicineFee()
-                        + bill.getOtherFee();
+        double total;
+        total = bill.getDoctorFee()
+                + bill.getMedicineFee()
+                + bill.getOtherFee();
 
         bill.setTotalAmount(total);
 
