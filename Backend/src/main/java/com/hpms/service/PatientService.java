@@ -20,17 +20,43 @@ public class PatientService {
 
     // Add new patient
     public Patient addPatient(Patient patient) {
+
+        long count = patientRepository.count() + 1;
+
+        patient.setPatientId(
+                String.format("P%03d", count)
+        );
+
         return patientRepository.save(patient);
     }
 
-    // Get patient by ID
+    // Get patient by MongoDB ID
     public Patient getPatientById(String id) {
         return patientRepository.findById(id).orElse(null);
     }
 
+    // Get patient by custom Patient ID - P001
+    public Patient getPatientByPatientId(String patientId) {
+        return patientRepository.findByPatientId(patientId);
+    }
+
     // Update patient
     public Patient updatePatient(String id, Patient patient) {
+
+        Patient existingPatient =
+                patientRepository.findById(id).orElse(null);
+
+        if (existingPatient == null) {
+            return null;
+        }
+
         patient.setId(id);
+
+        // Keep original custom patient ID
+        patient.setPatientId(
+                existingPatient.getPatientId()
+        );
+
         return patientRepository.save(patient);
     }
 

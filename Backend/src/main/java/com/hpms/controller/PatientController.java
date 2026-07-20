@@ -14,26 +14,33 @@ public class PatientController {
 
     private final PatientService patientService;
 
-    public PatientController(PatientService patientService) {
+    public PatientController(
+            PatientService patientService) {
+
         this.patientService = patientService;
     }
 
-    // Get all patients
     @GetMapping
     public List<Patient> getAllPatients() {
         return patientService.getAllPatients();
     }
 
-    // Add new patient
     @PostMapping
-    public Patient addPatient(@RequestBody Patient patient) {
+    public Patient addPatient(
+            @RequestBody Patient patient) {
+
         return patientService.addPatient(patient);
     }
 
-    // Get patient by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Patient> getPatientById(@PathVariable String id) {
-        Patient patient = patientService.getPatientById(id);
+    // Find using P001
+    @GetMapping("/patient-id/{patientId}")
+    public ResponseEntity<Patient> getPatientByPatientId(
+            @PathVariable String patientId) {
+
+        Patient patient =
+                patientService.getPatientByPatientId(
+                        patientId.toUpperCase()
+                );
 
         if (patient == null) {
             return ResponseEntity.notFound().build();
@@ -42,29 +49,42 @@ public class PatientController {
         return ResponseEntity.ok(patient);
     }
 
-    // Update patient
+    // Find using MongoDB ID
+    @GetMapping("/{id}")
+    public ResponseEntity<Patient> getPatientById(
+            @PathVariable String id) {
+
+        Patient patient =
+                patientService.getPatientById(id);
+
+        if (patient == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(patient);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Patient> updatePatient(
             @PathVariable String id,
             @RequestBody Patient patient) {
 
-        Patient existingPatient = patientService.getPatientById(id);
-
-        if (existingPatient == null) {
-            return ResponseEntity.notFound().build();
-        }
-
         Patient updatedPatient =
                 patientService.updatePatient(id, patient);
+
+        if (updatedPatient == null) {
+            return ResponseEntity.notFound().build();
+        }
 
         return ResponseEntity.ok(updatedPatient);
     }
 
-    // Delete patient
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePatient(@PathVariable String id) {
+    public ResponseEntity<Void> deletePatient(
+            @PathVariable String id) {
 
-        Patient existingPatient = patientService.getPatientById(id);
+        Patient existingPatient =
+                patientService.getPatientById(id);
 
         if (existingPatient == null) {
             return ResponseEntity.notFound().build();

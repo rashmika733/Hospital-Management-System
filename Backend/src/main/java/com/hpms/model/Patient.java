@@ -9,6 +9,7 @@ public class Patient {
     @Id
     private String id;
 
+    private String patientId;
     private String patientName;
     private int age;
     private String gender;
@@ -23,6 +24,7 @@ public class Patient {
                    String gender,
                    String phoneNumber,
                    String address) {
+
         this.patientName = patientName;
         this.age = age;
         this.gender = gender;
@@ -30,12 +32,22 @@ public class Patient {
         this.address = address;
     }
 
+    // MongoDB _id
     public String getId() {
         return id;
     }
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    // Custom Patient ID (P001, P002...)
+    public String getPatientId() {
+        return patientId;
+    }
+
+    public void setPatientId(String patientId) {
+        this.patientId = patientId;
     }
 
     public String getPatientName() {

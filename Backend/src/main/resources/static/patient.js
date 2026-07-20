@@ -1,197 +1,416 @@
 const API_URL = "/api/patients";
 
-const patientForm = document.getElementById("patientForm");
-const patientTableBody = document.getElementById("patientTableBody");
+const patientForm =
+    document.getElementById("patientForm");
 
-const patientIdInput = document.getElementById("patientId");
-const patientNameInput = document.getElementById("patientName");
-const patientAgeInput = document.getElementById("patientAge");
-const patientGenderInput = document.getElementById("patientGender");
-const patientPhoneInput = document.getElementById("patientPhone");
-const patientAddressInput = document.getElementById("patientAddress");
+const patientTableBody =
+    document.getElementById("patientTableBody");
 
-const searchPatientInput = document.getElementById("searchPatient");
-const totalPatientsElement = document.getElementById("totalPatients");
+const patientIdInput =
+    document.getElementById("patientId");
 
-const formTitle = document.getElementById("formTitle");
-const saveButton = document.getElementById("saveButton");
-const cancelButton = document.getElementById("cancelButton");
-const clearButton = document.getElementById("clearButton");
-const messageBox = document.getElementById("messageBox");
+const patientNameInput =
+    document.getElementById("patientName");
+
+const patientAgeInput =
+    document.getElementById("patientAge");
+
+const patientGenderInput =
+    document.getElementById("patientGender");
+
+const patientPhoneInput =
+    document.getElementById("patientPhone");
+
+const patientAddressInput =
+    document.getElementById("patientAddress");
+
+const searchPatientInput =
+    document.getElementById("searchPatient");
+
+const totalPatientsElement =
+    document.getElementById("totalPatients");
+
+const formTitle =
+    document.getElementById("formTitle");
+
+const saveButton =
+    document.getElementById("saveButton");
+
+const cancelButton =
+    document.getElementById("cancelButton");
+
+const clearButton =
+    document.getElementById("clearButton");
+
+const messageBox =
+    document.getElementById("messageBox");
 
 let patients = [];
 
-document.addEventListener("DOMContentLoaded", loadPatients);
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
-patientForm.addEventListener("submit", async function (event) {
-    event.preventDefault();
+        loadPatients();
 
-    if (!validatePatientForm()) {
-        return;
+        const logoutButton =
+            document.getElementById("logoutButton");
+
+        if (logoutButton) {
+            logoutButton.addEventListener(
+                "click",
+                function () {
+
+                    sessionStorage.clear();
+
+                    window.location.replace(
+                        "/admin-login.html"
+                    );
+                }
+            );
+        }
     }
+);
 
-    const patientId = patientIdInput.value.trim();
+patientForm.addEventListener(
+    "submit",
+    async function (event) {
 
-    const patient = {
-        patientName: patientNameInput.value.trim(),
-        age: Number(patientAgeInput.value),
-        gender: patientGenderInput.value,
-        phoneNumber: patientPhoneInput.value.trim(),
-        address: patientAddressInput.value.trim()
-    };
+        event.preventDefault();
 
-    try {
-        if (patientId === "") {
-            await addPatient(patient);
-        } else {
-            await updatePatient(patientId, patient);
+        if (!validatePatientForm()) {
+            return;
         }
 
-        resetPatientForm();
-        await loadPatients();
+        const mongoId =
+            patientIdInput.value.trim();
 
-    } catch (error) {
-        console.error(error);
-        showMessage("Patient information could not be saved.", "danger");
+        const patient = {
+            patientName:
+                patientNameInput.value.trim(),
+
+            age:
+                Number(patientAgeInput.value),
+
+            gender:
+            patientGenderInput.value,
+
+            phoneNumber:
+                patientPhoneInput.value.trim(),
+
+            address:
+                patientAddressInput.value.trim()
+        };
+
+        try {
+
+            if (mongoId === "") {
+                await addPatient(patient);
+            } else {
+                await updatePatient(
+                    mongoId,
+                    patient
+                );
+            }
+
+            resetPatientForm();
+
+            await loadPatients();
+
+        } catch (error) {
+
+            console.error(error);
+
+            showMessage(
+                "Patient information could not be saved.",
+                "danger"
+            );
+        }
     }
-});
+);
 
-searchPatientInput.addEventListener("input", function () {
-    const searchValue = searchPatientInput.value.trim().toLowerCase();
+searchPatientInput.addEventListener(
+    "input",
+    function () {
 
-    const filteredPatients = patients.filter(function (patient) {
-        return (
-            String(patient.id || "").toLowerCase().includes(searchValue) ||
-            String(patient.patientName || "").toLowerCase().includes(searchValue) ||
-            String(patient.phoneNumber || "").includes(searchValue) ||
-            String(patient.gender || "").toLowerCase().includes(searchValue)
-        );
-    });
+        const searchValue =
+            searchPatientInput.value
+                .trim()
+                .toLowerCase();
 
-    displayPatients(filteredPatients);
-});
+        const filteredPatients =
+            patients.filter(function (patient) {
 
-cancelButton.addEventListener("click", resetPatientForm);
+                return (
+                    String(
+                        patient.patientId || ""
+                    )
+                        .toLowerCase()
+                        .includes(searchValue) ||
 
-clearButton.addEventListener("click", function () {
-    setTimeout(function () {
-        patientIdInput.value = "";
-        patientPhoneInput.setCustomValidity("");
-        patientForm.classList.remove("was-validated");
-    }, 0);
-});
+                    String(
+                        patient.patientName || ""
+                    )
+                        .toLowerCase()
+                        .includes(searchValue) ||
+
+                    String(
+                        patient.phoneNumber || ""
+                    )
+                        .toLowerCase()
+                        .includes(searchValue) ||
+
+                    String(
+                        patient.gender || ""
+                    )
+                        .toLowerCase()
+                        .includes(searchValue) ||
+
+                    String(
+                        patient.address || ""
+                    )
+                        .toLowerCase()
+                        .includes(searchValue)
+                );
+            });
+
+        displayPatients(filteredPatients);
+    }
+);
+
+cancelButton.addEventListener(
+    "click",
+    resetPatientForm
+);
+
+clearButton.addEventListener(
+    "click",
+    function () {
+
+        setTimeout(function () {
+
+            patientIdInput.value = "";
+
+            patientPhoneInput.setCustomValidity("");
+
+            patientForm.classList.remove(
+                "was-validated"
+            );
+
+        }, 0);
+    }
+);
 
 async function loadPatients() {
+
     try {
-        const response = await fetch(API_URL);
+
+        const response =
+            await fetch(API_URL);
 
         if (!response.ok) {
-            throw new Error("Failed to load patients");
+            throw new Error(
+                "Failed to load patients"
+            );
         }
 
-        patients = await response.json();
+        patients =
+            await response.json();
+
         displayPatients(patients);
 
     } catch (error) {
+
         console.error(error);
-        showMessage("Patient records could not be loaded.", "danger");
+
+        showMessage(
+            "Patient records could not be loaded.",
+            "danger"
+        );
     }
 }
 
 async function addPatient(patient) {
-    const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(patient)
-    });
+
+    const response =
+        await fetch(
+            API_URL,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify(patient)
+            }
+        );
 
     if (!response.ok) {
-        throw new Error("Failed to add patient");
+        throw new Error(
+            "Failed to add patient"
+        );
     }
 
-    showMessage("Patient registered successfully.", "success");
+    showMessage(
+        "Patient registered successfully.",
+        "success"
+    );
 }
 
-async function updatePatient(patientId, patient) {
-    const response = await fetch(`${API_URL}/${patientId}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(patient)
-    });
+async function updatePatient(
+    mongoId,
+    patient
+) {
+
+    const response =
+        await fetch(
+            `${API_URL}/${mongoId}`,
+            {
+                method: "PUT",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify(patient)
+            }
+        );
 
     if (!response.ok) {
-        throw new Error("Failed to update patient");
+        throw new Error(
+            "Failed to update patient"
+        );
     }
 
-    showMessage("Patient information updated successfully.", "success");
+    showMessage(
+        "Patient information updated successfully.",
+        "success"
+    );
 }
 
-async function deletePatient(patientId) {
-    const patient = patients.find(function (item) {
-        return item.id === patientId;
-    });
+async function deletePatient(mongoId) {
+
+    const patient =
+        patients.find(function (item) {
+
+            return item.id === mongoId;
+        });
 
     if (!patient) {
-        showMessage("Patient could not be found.", "danger");
+
+        showMessage(
+            "Patient could not be found.",
+            "danger"
+        );
+
         return;
     }
 
-    const confirmed = confirm(
-        `Are you sure you want to delete ${patient.patientName}?`
-    );
+    const confirmed =
+        confirm(
+            `Are you sure you want to delete ${patient.patientName}?`
+        );
 
     if (!confirmed) {
         return;
     }
 
     try {
-        const response = await fetch(`${API_URL}/${patientId}`, {
-            method: "DELETE"
-        });
+
+        const response =
+            await fetch(
+                `${API_URL}/${mongoId}`,
+                {
+                    method: "DELETE"
+                }
+            );
 
         if (!response.ok) {
-            throw new Error("Failed to delete patient");
+            throw new Error(
+                "Failed to delete patient"
+            );
         }
 
-        if (patientIdInput.value === patientId) {
+        if (
+            patientIdInput.value ===
+            mongoId
+        ) {
             resetPatientForm();
         }
 
-        showMessage("Patient deleted successfully.", "success");
+        showMessage(
+            "Patient deleted successfully.",
+            "success"
+        );
+
         await loadPatients();
 
     } catch (error) {
+
         console.error(error);
-        showMessage("Patient could not be deleted.", "danger");
+
+        showMessage(
+            "Patient could not be deleted.",
+            "danger"
+        );
     }
 }
 
-function editPatient(patientId) {
-    const patient = patients.find(function (item) {
-        return item.id === patientId;
-    });
+function editPatient(mongoId) {
+
+    const patient =
+        patients.find(function (item) {
+
+            return item.id === mongoId;
+        });
 
     if (!patient) {
-        showMessage("Patient could not be found.", "danger");
+
+        showMessage(
+            "Patient could not be found.",
+            "danger"
+        );
+
         return;
     }
 
-    patientIdInput.value = patient.id;
-    patientNameInput.value = patient.patientName;
-    patientAgeInput.value = patient.age;
-    patientGenderInput.value = patient.gender;
-    patientPhoneInput.value = patient.phoneNumber;
-    patientAddressInput.value = patient.address;
+    // Hidden input එකේ MongoDB ID එක තියාගන්නවා
+    patientIdInput.value =
+        patient.id;
 
-    formTitle.textContent = "Update Patient";
-    saveButton.textContent = "Update Patient";
-    cancelButton.classList.remove("d-none");
+    patientNameInput.value =
+        patient.patientName;
 
-    patientForm.classList.remove("was-validated");
+    patientAgeInput.value =
+        patient.age;
+
+    patientGenderInput.value =
+        patient.gender;
+
+    patientPhoneInput.value =
+        patient.phoneNumber;
+
+    patientAddressInput.value =
+        patient.address;
+
+    formTitle.textContent =
+        "Update Patient";
+
+    saveButton.textContent =
+        "Update Patient";
+
+    cancelButton.classList.remove(
+        "d-none"
+    );
+
+    patientForm.classList.remove(
+        "was-validated"
+    );
 
     window.scrollTo({
         top: 0,
@@ -200,15 +419,25 @@ function editPatient(patientId) {
 }
 
 function displayPatients(patientList) {
+
     patientTableBody.innerHTML = "";
-    totalPatientsElement.textContent = patients.length;
+
+    totalPatientsElement.textContent =
+        patients.length;
 
     if (patientList.length === 0) {
+
         patientTableBody.innerHTML = `
             <tr>
-                <td colspan="7" class="text-center py-5 text-muted">
+                <td
+                    colspan="7"
+                    class="text-center py-5 text-muted"
+                >
                     <i class="bi bi-person-x empty-table-icon"></i>
-                    <p class="mt-2 mb-0">No patient records found.</p>
+
+                    <p class="mt-2 mb-0">
+                        No patient records found.
+                    </p>
                 </td>
             </tr>
         `;
@@ -216,57 +445,96 @@ function displayPatients(patientList) {
         return;
     }
 
-    patientList.forEach(function (patient) {
-        const row = document.createElement("tr");
+    patientList.forEach(
+        function (patient) {
 
-        row.innerHTML = `
-            <td>
-                <span class="badge text-bg-primary">
-                    ${escapeHtml(patient.id)}
-                </span>
-            </td>
+            const row =
+                document.createElement("tr");
 
-            <td>${escapeHtml(patient.patientName)}</td>
-            <td>${escapeHtml(patient.age)}</td>
-            <td>${escapeHtml(patient.gender)}</td>
-            <td>${escapeHtml(patient.phoneNumber)}</td>
+            row.innerHTML = `
+                <td>
+                    <span class="badge text-bg-primary">
+                        ${escapeHtml(
+                patient.patientId
+            )}
+                    </span>
+                </td>
 
-            <td class="patient-address-cell">
-                ${escapeHtml(patient.address)}
-            </td>
+                <td>
+                    ${escapeHtml(
+                patient.patientName
+            )}
+                </td>
 
-            <td>
-                <div class="action-buttons">
-                    <button
-                        type="button"
-                        class="btn btn-warning btn-sm"
-                        onclick="editPatient('${patient.id}')"
-                    >
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
+                <td>
+                    ${escapeHtml(
+                patient.age
+            )}
+                </td>
 
-                    <button
-                        type="button"
-                        class="btn btn-danger btn-sm"
-                        onclick="deletePatient('${patient.id}')"
-                    >
-                        <i class="bi bi-trash-fill"></i>
-                    </button>
-                </div>
-            </td>
-        `;
+                <td>
+                    ${escapeHtml(
+                patient.gender
+            )}
+                </td>
 
-        patientTableBody.appendChild(row);
-    });
+                <td>
+                    ${escapeHtml(
+                patient.phoneNumber
+            )}
+                </td>
+
+                <td class="patient-address-cell">
+                    ${escapeHtml(
+                patient.address
+            )}
+                </td>
+
+                <td>
+                    <div class="action-buttons">
+
+                        <button
+                            type="button"
+                            class="btn btn-warning btn-sm"
+                            onclick="editPatient('${patient.id}')"
+                        >
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="btn btn-danger btn-sm"
+                            onclick="deletePatient('${patient.id}')"
+                        >
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+
+                    </div>
+                </td>
+            `;
+
+            patientTableBody.appendChild(
+                row
+            );
+        }
+    );
 }
 
 function validatePatientForm() {
-    const phonePattern = /^[0-9]{10}$/;
-    const age = Number(patientAgeInput.value);
+
+    const phonePattern =
+        /^[0-9]{10}$/;
+
+    const age =
+        Number(
+            patientAgeInput.value
+        );
 
     let isValid = true;
 
-    if (patientNameInput.value.trim() === "") {
+    if (
+        patientNameInput.value.trim() === ""
+    ) {
         isValid = false;
     }
 
@@ -278,85 +546,109 @@ function validatePatientForm() {
         isValid = false;
     }
 
-    if (patientGenderInput.value === "") {
+    if (
+        patientGenderInput.value === ""
+    ) {
         isValid = false;
     }
 
-    if (!phonePattern.test(patientPhoneInput.value.trim())) {
+    if (
+        !phonePattern.test(
+            patientPhoneInput.value.trim()
+        )
+    ) {
+
         patientPhoneInput.setCustomValidity(
             "Enter a valid 10-digit phone number."
         );
+
         isValid = false;
+
     } else {
-        patientPhoneInput.setCustomValidity("");
+
+        patientPhoneInput.setCustomValidity(
+            ""
+        );
     }
 
-    if (patientAddressInput.value.trim() === "") {
+    if (
+        patientAddressInput.value.trim() === ""
+    ) {
         isValid = false;
     }
 
-    patientForm.classList.add("was-validated");
+    patientForm.classList.add(
+        "was-validated"
+    );
 
-    return isValid && patientForm.checkValidity();
+    return (
+        isValid &&
+        patientForm.checkValidity()
+    );
 }
 
 function resetPatientForm() {
+
     patientForm.reset();
 
     patientIdInput.value = "";
-    patientPhoneInput.setCustomValidity("");
 
-    patientForm.classList.remove("was-validated");
+    patientPhoneInput.setCustomValidity(
+        ""
+    );
 
-    formTitle.textContent = "Register Patient";
-    saveButton.textContent = "Save Patient";
-    cancelButton.classList.add("d-none");
+    patientForm.classList.remove(
+        "was-validated"
+    );
+
+    formTitle.textContent =
+        "Register Patient";
+
+    saveButton.textContent =
+        "Save Patient";
+
+    cancelButton.classList.add(
+        "d-none"
+    );
 }
 
-function showMessage(message, type) {
-    messageBox.textContent = message;
-    messageBox.className = `alert alert-${type}`;
-    messageBox.classList.remove("d-none");
+function showMessage(
+    message,
+    type
+) {
 
-    setTimeout(function () {
-        messageBox.classList.add("d-none");
-    }, 3000);
+    messageBox.textContent =
+        message;
+
+    messageBox.className =
+        `alert alert-${type}`;
+
+    messageBox.classList.remove(
+        "d-none"
+    );
+
+    setTimeout(
+        function () {
+
+            messageBox.classList.add(
+                "d-none"
+            );
+
+        },
+        3000
+    );
 }
 
 function escapeHtml(value) {
-    const temporaryElement = document.createElement("div");
+
+    const temporaryElement =
+        document.createElement("div");
 
     temporaryElement.textContent =
-        value === null || value === undefined
+        value === null ||
+        value === undefined
             ? ""
             : String(value);
 
     return temporaryElement.innerHTML;
 }
-const searchPatient = document.getElementById("searchPatient");
-
-searchPatient.addEventListener("input", function () {
-
-    const searchValue = searchPatient.value
-        .toLowerCase()
-        .trim();
-
-    const rows = document.querySelectorAll(
-        "#patientTableBody tr"
-    );
-
-    rows.forEach(function (row) {
-
-        if (row.id === "emptyPatientRow") {
-            return;
-        }
-
-        const rowText = row.textContent.toLowerCase();
-
-        if (rowText.includes(searchValue)) {
-            row.style.display = "";
-        } else {
-            row.style.display = "none";
-        }
-    });
-});
