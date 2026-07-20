@@ -22,18 +22,22 @@ adminLoginForm.addEventListener(
         };
 
         try {
+
             const response = await fetch(
                 "/api/admins/login",
                 {
                     method: "POST",
+
                     headers: {
                         "Content-Type": "application/json"
                     },
+
                     body: JSON.stringify(loginData)
                 }
             );
 
             if (!response.ok) {
+
                 const errorMessage =
                     await response.text();
 
@@ -46,29 +50,19 @@ adminLoginForm.addEventListener(
                 return;
             }
 
-            const admin =
-                await response.json();
+            const admin = await response.json();
 
-            sessionStorage.setItem(
-                "adminLoggedIn",
-                "true"
-            );
+            alert("Login Success");
 
-            sessionStorage.setItem(
-                "adminEmail",
-                admin.email
-            );
+            sessionStorage.setItem("adminLoggedIn", "true");
+            sessionStorage.setItem("adminEmail", admin.email);
 
-            sessionStorage.setItem(
-                "adminName",
-                admin.fullName
-            );
 
-            window.location.replace(
-                "/index.html"
-            );
+
+            window.location.href = "/index.html";
 
         } catch (error) {
+
             console.error(
                 "Login error:",
                 error
@@ -83,6 +77,7 @@ adminLoginForm.addEventListener(
 );
 
 function showLoginMessage(message, type) {
+
     loginMessage.textContent = message;
 
     loginMessage.className =
@@ -91,4 +86,27 @@ function showLoginMessage(message, type) {
     loginMessage.classList.remove(
         "d-none"
     );
+}
+function togglePasswordVisibility() {
+
+    const passwordInput =
+        document.getElementById("adminPassword");
+
+    const passwordIcon =
+        document.getElementById("passwordIcon");
+
+    if (passwordInput.type === "password") {
+
+        passwordInput.type = "text";
+
+        passwordIcon.className =
+            "bi bi-eye-slash-fill";
+
+    } else {
+
+        passwordInput.type = "password";
+
+        passwordIcon.className =
+            "bi bi-eye-fill";
+    }
 }
