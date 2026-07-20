@@ -30,7 +30,78 @@ document.addEventListener("DOMContentLoaded", function () {
     calculateTotal();
     loadBills();
 });
+let patientSearchTimer = null;
 
+patientIdInput.addEventListener("input", function () {
+
+    clearTimeout(patientSearchTimer);
+
+    const patientId =
+        patientIdInput.value
+            .trim()
+            .toUpperCase();
+
+    patientIdInput.value = patientId;
+
+    if (patientId === "") {
+        patientNameInput.value = "";
+        return;
+    }
+
+    patientSearchTimer = setTimeout(
+        function () {
+            loadPatientByPatientId(patientId);
+        },
+        400
+    );
+});
+
+async function loadPatientByPatientId(patientId) {
+
+    try {
+
+        const response = await fetch(
+            `/api/patients/patient-id/${encodeURIComponent(patientId)}`
+        );
+
+        if (response.status === 404) {
+
+            patientNameInput.value = "";
+
+            showMessage(
+                "Patient ID not found.",
+                "warning"
+            );
+
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                "Patient could not be loaded."
+            );
+        }
+
+        const patient = await response.json();
+
+        patientNameInput.value =
+            patient.patientName || "";
+
+    } catch (error) {
+
+        console.error(
+            "Patient search error:",
+            error
+        );
+
+        patientNameInput.value = "";
+
+        showMessage(
+            "Cannot load patient information.",
+            "danger"
+        );
+    }
+}
 
 /* Today's date input එකට දානවා */
 function setTodayDate() {
