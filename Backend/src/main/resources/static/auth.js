@@ -1,8 +1,7 @@
-const adminLoggedIn =
-    sessionStorage.getItem("adminLoggedIn");
+document.getElementById("logoutButton").addEventListener("click", function () {
 
-console.log("Login status:", adminLoggedIn);
+    sessionStorage.removeItem("adminLoggedIn");
 
-if (adminLoggedIn !== "true") {
     window.location.replace("/admin-login.html");
-}
+
+});
