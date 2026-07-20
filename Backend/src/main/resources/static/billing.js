@@ -30,78 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
     calculateTotal();
     loadBills();
 });
-let patientSearchTimer = null;
 
-patientIdInput.addEventListener("input", function () {
-
-    clearTimeout(patientSearchTimer);
-
-    const patientId =
-        patientIdInput.value
-            .trim()
-            .toUpperCase();
-
-    patientIdInput.value = patientId;
-
-    if (patientId === "") {
-        patientNameInput.value = "";
-        return;
-    }
-
-    patientSearchTimer = setTimeout(
-        function () {
-            loadPatientByPatientId(patientId);
-        },
-        400
-    );
-});
-
-async function loadPatientByPatientId(patientId) {
-
-    try {
-
-        const response = await fetch(
-            `/api/patients/patient-id/${encodeURIComponent(patientId)}`
-        );
-
-        if (response.status === 404) {
-
-            patientNameInput.value = "";
-
-            showMessage(
-                "Patient ID not found.",
-                "warning"
-            );
-
-            return;
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                "Patient could not be loaded."
-            );
-        }
-
-        const patient = await response.json();
-
-        patientNameInput.value =
-            patient.patientName || "";
-
-    } catch (error) {
-
-        console.error(
-            "Patient search error:",
-            error
-        );
-
-        patientNameInput.value = "";
-
-        showMessage(
-            "Cannot load patient information.",
-            "danger"
-        );
-    }
-}
 
 /* Today's date input එකට දානවා */
 function setTodayDate() {
@@ -309,11 +238,25 @@ billingForm.addEventListener(
 );
 
 
-/* Validation */
+//* Validation */
 function validateBill(bill) {
+
     if (bill.billId === "") {
         showMessage(
             "Enter Bill ID.",
+            "warning"
+        );
+
+        billIdInput.focus();
+        return false;
+    }
+
+    // Bill ID must be B001, B002, B003...
+    const billIdPattern = /^B\d{3}$/;
+
+    if (!billIdPattern.test(bill.billId)) {
+        showMessage(
+            "Bill ID must be like B001, B002 or B003.",
             "warning"
         );
 
@@ -366,7 +309,6 @@ function validateBill(bill) {
 
     return true;
 }
-
 
 /* Duplicate Bill ID check */
 function hasDuplicateBillId(bill) {
