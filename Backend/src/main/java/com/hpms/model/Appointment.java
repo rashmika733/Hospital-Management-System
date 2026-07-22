@@ -42,66 +42,82 @@ public class Appointment {
     }
 
     public String getAppointmentId() {
+
         return appointmentId;
     }
 
     public void setAppointmentId(String appointmentId) {
+
         this.appointmentId = appointmentId;
     }
 
     public String getPatientName() {
+
         return patientName;
     }
 
     public void setPatientName(String patientName) {
+
         this.patientName = patientName;
     }
 
     public String getDoctorName() {
+
         return doctorName;
     }
 
     public void setDoctorName(String doctorName) {
+
         this.doctorName = doctorName;
     }
 
     public String getSpecialization() {
+
         return specialization;
     }
 
     public void setSpecialization(String specialization) {
+
         this.specialization = specialization;
     }
 
     public String getAppointmentDate() {
+
         return appointmentDate;
     }
 
     public void setAppointmentDate(String appointmentDate) {
+
         this.appointmentDate = appointmentDate;
     }
 
     public String getAppointmentTime() {
+
         return appointmentTime;
     }
 
     public void setAppointmentTime(String appointmentTime) {
+
         this.appointmentTime = appointmentTime;
     }
 
     public String getStatus() {
+
         return status;
     }
 
     public void setStatus(String status) {
+
         this.status = status;
     }
 
     public String getReason() {
+
         return reason;
     }
 
     public void setReason(String reason) {
+
         this.reason = reason;
     }
 }

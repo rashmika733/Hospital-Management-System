@@ -19,11 +19,7 @@ public class Patient {
     public Patient() {
     }
 
-    public Patient(String patientName,
-                   int age,
-                   String gender,
-                   String phoneNumber,
-                   String address) {
+    public Patient(String patientName,int age, String gender, String phoneNumber,String address) {
 
         this.patientName = patientName;
         this.age = age;
