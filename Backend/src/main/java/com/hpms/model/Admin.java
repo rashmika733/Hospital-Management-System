@@ -10,16 +10,12 @@ public class Admin {
 
     @Id
     private String id;
-
     @NotBlank
     private String fullName;
-
     @Email
     private String email;
-
     @NotBlank
     private String password;
-
     @NotBlank
     private String phone;
 
@@ -34,24 +30,21 @@ public class Admin {
         this.phone = phone;
     }
 
-    public String getId() { return id; }
-
+    public String getId() {
+        return id;
+    }
     public void setId(String id) {
         this.id = id;
     }
-
     public String getFullName() {
         return fullName;
     }
-
     public void setFullName(String fullName) {
         this.fullName = fullName;
     }
-
     public String getEmail() {
         return email;
     }
-
     public void setEmail(String email) {
         this.email = email;
     }
