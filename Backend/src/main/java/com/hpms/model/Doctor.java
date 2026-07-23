@@ -20,58 +20,72 @@ public class Doctor {
     }
 
     public String getId() {
+
         return id;
     }
 
     public void setId(String id) {
+
         this.id = id;
     }
 
     public String getDoctorId() {
+
         return doctorId;
     }
 
     public void setDoctorId(String doctorId) {
+
         this.doctorId = doctorId;
     }
 
     public String getName() {
+
         return name;
     }
 
     public void setName(String name) {
+
         this.name = name;
     }
 
     public String getSpecialization() {
+
         return specialization;
     }
 
     public void setSpecialization(String specialization) {
+
         this.specialization = specialization;
     }
 
     public String getPhone() {
+
         return phone;
     }
 
     public void setPhone(String phone) {
+
         this.phone = phone;
     }
 
     public String getEmail() {
+
         return email;
     }
 
     public void setEmail(String email) {
+
         this.email = email;
     }
 
     public String getRoom() {
+
         return room;
     }
 
     public void setRoom(String room) {
+        
         this.room = room;
     }
 }
